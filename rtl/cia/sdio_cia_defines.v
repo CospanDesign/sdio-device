@@ -28,8 +28,6 @@
 `define DRIVE_STRENGTH_ADDR   18'h015
 `define INTERRUPT_EXT_ADDR    18'h016
 
-
-
 //Values
 `define CCCR_FORMAT           4'h3    /* CCCR/FBR Version 3.0 (is this right?)  */
 `define SDIO_VERSION          4'h4    /* SDIO Version 3.0     (is this right?)  */
