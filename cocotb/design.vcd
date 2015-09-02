@@ -1,0 +1,936 @@
+$date
+	Sat Aug 22 18:59:23 2015
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module tb_cocotb $end
+$var wire 1 ! clk $end
+$var wire 1 " demo_func_abort $end
+$var wire 1 # demo_func_activate $end
+$var wire 1 $ demo_func_block_mode $end
+$var wire 1 % demo_func_busy $end
+$var wire 1 & demo_func_enable $end
+$var wire 1 ' demo_func_finished $end
+$var wire 1 ( demo_func_inc_addr $end
+$var wire 1 ) demo_func_int_en $end
+$var wire 1 * demo_func_int_pend $end
+$var wire 1 + demo_func_interrupt $end
+$var wire 1 , demo_func_read_wait $end
+$var wire 1 - demo_func_ready $end
+$var wire 16 . fbr1_block_size [15:0] $end
+$var wire 1 / fbr1_csa_en $end
+$var wire 4 0 fbr1_pwr_mode [3:0] $end
+$var wire 16 1 fbr2_block_size [15:0] $end
+$var wire 1 2 fbr2_csa_en $end
+$var wire 4 3 fbr2_pwr_mode [3:0] $end
+$var wire 16 4 fbr3_block_size [15:0] $end
+$var wire 1 5 fbr3_csa_en $end
+$var wire 4 6 fbr3_pwr_mode [3:0] $end
+$var wire 16 7 fbr4_block_size [15:0] $end
+$var wire 1 8 fbr4_csa_en $end
+$var wire 4 9 fbr4_pwr_mode [3:0] $end
+$var wire 16 : fbr5_block_size [15:0] $end
+$var wire 1 ; fbr5_csa_en $end
+$var wire 4 < fbr5_pwr_mode [3:0] $end
+$var wire 16 = fbr6_block_size [15:0] $end
+$var wire 1 > fbr6_csa_en $end
+$var wire 4 ? fbr6_pwr_mode [3:0] $end
+$var wire 16 @ fbr7_block_size [15:0] $end
+$var wire 1 A fbr7_csa_en $end
+$var wire 4 B fbr7_pwr_mode [3:0] $end
+$var wire 18 C func_addr [17:0] $end
+$var wire 1 D func_block_mode $end
+$var wire 18 E func_data_count [17:0] $end
+$var wire 1 F func_data_rdy $end
+$var wire 1 G func_host_rdy $end
+$var wire 4 H func_num [3:0] $end
+$var wire 1 I func_rd_after_wr $end
+$var wire 1 J func_rd_data_stb $end
+$var wire 8 K func_read_data [7:0] $end
+$var wire 1 L func_wr_data_stb $end
+$var wire 8 M func_write_data [7:0] $end
+$var wire 1 N func_write_flag $end
+$var wire 3 O function_abort [2:0] $end
+$var wire 1 P function_activate $end
+$var wire 8 Q function_enable [7:0] $end
+$var wire 1 R function_finished $end
+$var wire 1 S function_inc_addr $end
+$var wire 8 T function_int_en [7:0] $end
+$var wire 1 U function_read_wait $end
+$var wire 1 V i_func_finished $end
+$var wire 1 W o_ddr_en $end
+$var wire 1 X o_func_activate $end
+$var wire 1 Y o_func_block_mode $end
+$var wire 1 Z o_func_inc_addr $end
+$var wire 1 [ request_interrupt $end
+$var wire 1 \ request_read_wait $end
+$var wire 1 ] rst $end
+$var wire 1 ^ sdio_clk $end
+$var wire 1 _ sdio_cmd $end
+$var wire 4 ` sdio_data [3:0] $end
+$var reg 8 a function_exec_status [7:0] $end
+$var reg 8 b function_int_pend [7:0] $end
+$var reg 8 c function_interrupt [7:0] $end
+$var reg 8 d function_ready [7:0] $end
+$var reg 1 e r_request_interrupt $end
+$var reg 1 f r_request_read_wait $end
+$var reg 1 g r_rst $end
+$scope module sdio_device $end
+$var wire 1 h chip_select_n $end
+$var wire 6 i cmd [5:0] $end
+$var wire 32 j cmd_arg [31:0] $end
+$var wire 1 k cmd_crc_good_stb $end
+$var wire 1 l cmd_phy_idle $end
+$var wire 1 m cmd_stb $end
+$var wire 1 n ddr_en $end
+$var wire 1 o func_activate $end
+$var wire 1 p func_block_mode $end
+$var wire 1 q func_finished $end
+$var wire 1 r func_inc_addr $end
+$var wire 1 s i_func_data_rdy $end
+$var wire 8 t i_func_exec_status [7:0] $end
+$var wire 1 V i_func_finished $end
+$var wire 1 G i_func_host_rdy $end
+$var wire 8 u i_func_int_pending [7:0] $end
+$var wire 8 v i_func_read_data [7:0] $end
+$var wire 8 w i_func_ready [7:0] $end
+$var wire 8 x i_interrupt [7:0] $end
+$var wire 1 y i_sdio_clk $end
+$var wire 1 _ i_sdio_cmd $end
+$var wire 1 z interrupt $end
+$var wire 4 { io_sdio_data [3:0] $end
+$var wire 16 | o_block_size [15:0] $end
+$var wire 1 W o_ddr_en $end
+$var wire 16 } o_fbr1_block_size [15:0] $end
+$var wire 1 / o_fbr1_csa_en $end
+$var wire 4 ~ o_fbr1_pwr_mode [3:0] $end
+$var wire 16 !" o_fbr2_block_size [15:0] $end
+$var wire 1 2 o_fbr2_csa_en $end
+$var wire 4 "" o_fbr2_pwr_mode [3:0] $end
+$var wire 16 #" o_fbr3_block_size [15:0] $end
+$var wire 1 5 o_fbr3_csa_en $end
+$var wire 4 $" o_fbr3_pwr_mode [3:0] $end
+$var wire 16 %" o_fbr4_block_size [15:0] $end
+$var wire 1 8 o_fbr4_csa_en $end
+$var wire 4 &" o_fbr4_pwr_mode [3:0] $end
+$var wire 16 '" o_fbr5_block_size [15:0] $end
+$var wire 1 ; o_fbr5_csa_en $end
+$var wire 4 (" o_fbr5_pwr_mode [3:0] $end
+$var wire 16 )" o_fbr6_block_size [15:0] $end
+$var wire 1 > o_fbr6_csa_en $end
+$var wire 4 *" o_fbr6_pwr_mode [3:0] $end
+$var wire 16 +" o_fbr7_block_size [15:0] $end
+$var wire 1 A o_fbr7_csa_en $end
+$var wire 4 ," o_fbr7_pwr_mode [3:0] $end
+$var wire 3 -" o_func_abort [2:0] $end
+$var wire 1 X o_func_activate $end
+$var wire 18 ." o_func_addr [17:0] $end
+$var wire 1 Y o_func_block_mode $end
+$var wire 18 /" o_func_data_count [17:0] $end
+$var wire 1 F o_func_data_rdy $end
+$var wire 8 0" o_func_enable [7:0] $end
+$var wire 1 1" o_func_host_rdy $end
+$var wire 1 Z o_func_inc_addr $end
+$var wire 8 2" o_func_int_en [7:0] $end
+$var wire 4 3" o_func_num [3:0] $end
+$var wire 1 I o_func_rd_after_wr $end
+$var wire 8 4" o_func_write_data [7:0] $end
+$var wire 1 N o_func_write_flag $end
+$var wire 1 5" read_wait $end
+$var wire 40 6" rsps [39:0] $end
+$var wire 8 7" rsps_len [7:0] $end
+$var wire 1 8" rsps_stb $end
+$var wire 1 ] rst $end
+$var wire 1 9" sd1_phy $end
+$var wire 1 :" sd4_phy $end
+$var wire 1 ^ sdio_clk $end
+$var wire 1 ;" sdio_cmd_dir $end
+$var wire 1 <" sdio_cmd_in $end
+$var wire 1 =" sdio_cmd_out $end
+$var wire 1 >" sdio_data_dir $end
+$var wire 4 ?" sdio_data_in [3:0] $end
+$var wire 4 @" sdio_data_out [3:0] $end
+$var wire 1 A" spi_phy $end
+$var wire 1 B" tunning_block $end
+$scope module card_controller $end
+$var wire 1 C" cia_activate $end
+$var wire 8 D" cia_phy_i_data_in [7:0] $end
+$var wire 1 E" cia_phy_i_data_ready $end
+$var wire 1 F" cia_phy_i_data_stb $end
+$var wire 8 G" cia_phy_o_data_out [7:0] $end
+$var wire 1 H" cia_phy_o_data_stb $end
+$var wire 1 I" cia_phy_o_finished $end
+$var wire 1 J" cia_phy_o_ready $end
+$var wire 1 K" data_txrx_in_progress_flag $end
+$var wire 1 L" enable_async_interrupt $end
+$var wire 1 h i_chip_select_n $end
+$var wire 6 M" i_cmd [5:0] $end
+$var wire 32 N" i_cmd_arg [31:0] $end
+$var wire 1 k i_cmd_crc_good_stb $end
+$var wire 1 l i_cmd_phy_idle $end
+$var wire 1 m i_cmd_stb $end
+$var wire 1 O" i_func_active $end
+$var wire 1 s i_func_data_rdy $end
+$var wire 8 P" i_func_exec_status [7:0] $end
+$var wire 1 q i_func_finished $end
+$var wire 8 Q" i_func_int_pending [7:0] $end
+$var wire 8 R" i_func_read_data [7:0] $end
+$var wire 8 S" i_func_ready [7:0] $end
+$var wire 8 T" i_func_ready_for_data [7:0] $end
+$var wire 8 U" i_phy_data_data_in [7:0] $end
+$var wire 1 V" i_phy_data_data_stb $end
+$var wire 1 W" i_phy_data_ready $end
+$var wire 16 X" max_f0_block_size [15:0] $end
+$var wire 1 Y" o_1_bit_mode $end
+$var wire 1 Z" o_4_bit_mode $end
+$var wire 1 [" o_8_bit_mode $end
+$var wire 1 \" o_bus_release_req_stb $end
+$var wire 1 ]" o_ddr_50 $end
+$var wire 1 ^" o_driver_type_a $end
+$var wire 1 _" o_driver_type_b $end
+$var wire 1 `" o_driver_type_c $end
+$var wire 1 a" o_driver_type_d $end
+$var wire 1 b" o_en_4bit_block_int $end
+$var wire 1 c" o_en_card_detect_n $end
+$var wire 1 d" o_enable_async_interrupt $end
+$var wire 16 e" o_fbr1_block_size [15:0] $end
+$var wire 1 / o_fbr1_csa_en $end
+$var wire 4 f" o_fbr1_pwr_mode [3:0] $end
+$var wire 16 g" o_fbr2_block_size [15:0] $end
+$var wire 1 2 o_fbr2_csa_en $end
+$var wire 4 h" o_fbr2_pwr_mode [3:0] $end
+$var wire 16 i" o_fbr3_block_size [15:0] $end
+$var wire 1 5 o_fbr3_csa_en $end
+$var wire 4 j" o_fbr3_pwr_mode [3:0] $end
+$var wire 16 k" o_fbr4_block_size [15:0] $end
+$var wire 1 8 o_fbr4_csa_en $end
+$var wire 4 l" o_fbr4_pwr_mode [3:0] $end
+$var wire 16 m" o_fbr5_block_size [15:0] $end
+$var wire 1 ; o_fbr5_csa_en $end
+$var wire 4 n" o_fbr5_pwr_mode [3:0] $end
+$var wire 16 o" o_fbr6_block_size [15:0] $end
+$var wire 1 > o_fbr6_csa_en $end
+$var wire 4 p" o_fbr6_pwr_mode [3:0] $end
+$var wire 16 q" o_fbr7_block_size [15:0] $end
+$var wire 1 A o_fbr7_csa_en $end
+$var wire 4 r" o_fbr7_pwr_mode [3:0] $end
+$var wire 3 s" o_func_abort_stb [2:0] $end
+$var wire 8 t" o_func_enable [7:0] $end
+$var wire 1 1" o_func_host_rdy $end
+$var wire 8 u" o_func_int_enable [7:0] $end
+$var wire 4 v" o_func_select [3:0] $end
+$var wire 16 w" o_max_f0_block_size [15:0] $end
+$var wire 8 x" o_phy_data_data_out [7:0] $end
+$var wire 1 y" o_phy_data_data_stb $end
+$var wire 1 z" o_phy_data_finished $end
+$var wire 1 {" o_phy_data_ready $end
+$var wire 40 |" o_rsps [39:0] $end
+$var wire 8 }" o_rsps_len [7:0] $end
+$var wire 1 ~" o_sdr_104 $end
+$var wire 1 !# o_sdr_12 $end
+$var wire 1 "# o_sdr_25 $end
+$var wire 1 ## o_sdr_50 $end
+$var wire 1 $# o_soft_reset $end
+$var wire 2 %# r5_cmd [1:0] $end
+$var wire 1 ] rst $end
+$var wire 1 ^ sdio_clk $end
+$var reg 1 &# bad_crc $end
+$var reg 1 '# busy $end
+$var reg 1 (# card_error $end
+$var reg 1 )# cmd_arg_out_of_range $end
+$var reg 1 *# illegal_command $end
+$var reg 1 +# o_func_activate $end
+$var reg 18 ,# o_func_addr [17:0] $end
+$var reg 1 -# o_func_block_mode $end
+$var reg 18 .# o_func_data_count [17:0] $end
+$var reg 1 /# o_func_inc_addr $end
+$var reg 4 0# o_func_num [3:0] $end
+$var reg 1 1# o_func_rd_after_wr $end
+$var reg 8 2# o_func_write_data [7:0] $end
+$var reg 1 3# o_func_write_flag $end
+$var reg 1 4# o_rsps_stb $end
+$var reg 1 5# o_tunning_block $end
+$var reg 16 6# register_card_address [15:0] $end
+$var reg 4 7# response_index [3:0] $end
+$var reg 1 8# response_type $end
+$var reg 48 9# response_value [47:0] $end
+$var reg 4 :# state [3:0] $end
+$var reg 1 ;# v1p8_sel $end
+$var reg 24 <# vio_ocr [23:0] $end
+$var reg 4 =# voltage_select [3:0] $end
+$scope module cia $end
+$var wire 1 ^ clk $end
+$var wire 1 C" i_activate $end
+$var wire 18 ># i_address [17:0] $end
+$var wire 18 ?# i_data_count [17:0] $end
+$var wire 8 @# i_data_in [7:0] $end
+$var wire 1 F" i_data_stb $end
+$var wire 1 K" i_data_txrx_in_progress_flag $end
+$var wire 8 A# i_fbr1_data_out [7:0] $end
+$var wire 1 B# i_fbr1_data_stb $end
+$var wire 1 C# i_fbr1_finished $end
+$var wire 1 D# i_fbr1_ready $end
+$var wire 8 E# i_fbr2_data_out [7:0] $end
+$var wire 1 F# i_fbr2_data_stb $end
+$var wire 1 G# i_fbr2_finished $end
+$var wire 1 H# i_fbr2_ready $end
+$var wire 8 I# i_fbr3_data_out [7:0] $end
+$var wire 1 J# i_fbr3_data_stb $end
+$var wire 1 K# i_fbr3_finished $end
+$var wire 1 L# i_fbr3_ready $end
+$var wire 8 M# i_fbr4_data_out [7:0] $end
+$var wire 1 N# i_fbr4_data_stb $end
+$var wire 1 O# i_fbr4_finished $end
+$var wire 1 P# i_fbr4_ready $end
+$var wire 8 Q# i_fbr5_data_out [7:0] $end
+$var wire 1 R# i_fbr5_data_stb $end
+$var wire 1 S# i_fbr5_finished $end
+$var wire 1 T# i_fbr5_ready $end
+$var wire 8 U# i_fbr6_data_out [7:0] $end
+$var wire 1 V# i_fbr6_data_stb $end
+$var wire 1 W# i_fbr6_finished $end
+$var wire 1 X# i_fbr6_ready $end
+$var wire 8 Y# i_fbr7_data_out [7:0] $end
+$var wire 1 Z# i_fbr7_data_stb $end
+$var wire 1 [# i_fbr7_finished $end
+$var wire 1 \# i_fbr7_ready $end
+$var wire 1 O" i_func_active $end
+$var wire 8 ]# i_func_exec_status [7:0] $end
+$var wire 8 ^# i_func_int_pending [7:0] $end
+$var wire 8 _# i_func_ready [7:0] $end
+$var wire 8 `# i_func_ready_for_data [7:0] $end
+$var wire 1 r i_inc_addr $end
+$var wire 1 E" i_ready $end
+$var wire 1 N i_write_flag $end
+$var wire 1 Y" o_1_bit_mode $end
+$var wire 1 Z" o_4_bit_mode $end
+$var wire 1 [" o_8_bit_mode $end
+$var wire 1 \" o_bus_release_req_stb $end
+$var wire 8 a# o_data_out [7:0] $end
+$var wire 1 H" o_data_stb $end
+$var wire 1 ]" o_ddr_50 $end
+$var wire 1 ^" o_driver_type_a $end
+$var wire 1 _" o_driver_type_b $end
+$var wire 1 `" o_driver_type_c $end
+$var wire 1 a" o_driver_type_d $end
+$var wire 1 b" o_en_4bit_block_int $end
+$var wire 1 c" o_en_card_detect_n $end
+$var wire 1 L" o_enable_async_interrupt $end
+$var wire 16 b# o_fbr1_block_size [15:0] $end
+$var wire 1 / o_fbr1_csa_en $end
+$var wire 1 c# o_fbr1_en $end
+$var wire 4 d# o_fbr1_pwr_mode [3:0] $end
+$var wire 16 e# o_fbr2_block_size [15:0] $end
+$var wire 1 2 o_fbr2_csa_en $end
+$var wire 1 f# o_fbr2_en $end
+$var wire 4 g# o_fbr2_pwr_mode [3:0] $end
+$var wire 16 h# o_fbr3_block_size [15:0] $end
+$var wire 1 5 o_fbr3_csa_en $end
+$var wire 1 i# o_fbr3_en $end
+$var wire 4 j# o_fbr3_pwr_mode [3:0] $end
+$var wire 16 k# o_fbr4_block_size [15:0] $end
+$var wire 1 8 o_fbr4_csa_en $end
+$var wire 1 l# o_fbr4_en $end
+$var wire 4 m# o_fbr4_pwr_mode [3:0] $end
+$var wire 16 n# o_fbr5_block_size [15:0] $end
+$var wire 1 ; o_fbr5_csa_en $end
+$var wire 1 o# o_fbr5_en $end
+$var wire 4 p# o_fbr5_pwr_mode [3:0] $end
+$var wire 16 q# o_fbr6_block_size [15:0] $end
+$var wire 1 > o_fbr6_csa_en $end
+$var wire 1 r# o_fbr6_en $end
+$var wire 4 s# o_fbr6_pwr_mode [3:0] $end
+$var wire 16 t# o_fbr7_block_size [15:0] $end
+$var wire 1 A o_fbr7_csa_en $end
+$var wire 1 u# o_fbr7_en $end
+$var wire 4 v# o_fbr7_pwr_mode [3:0] $end
+$var wire 1 w# o_fbr_activate $end
+$var wire 1 x# o_fbr_addr_in $end
+$var wire 18 y# o_fbr_address [17:0] $end
+$var wire 18 z# o_fbr_data_count [17:0] $end
+$var wire 8 {# o_fbr_data_in [7:0] $end
+$var wire 1 |# o_fbr_data_stb $end
+$var wire 1 }# o_fbr_ready $end
+$var wire 8 ~# o_fbr_select [7:0] $end
+$var wire 1 !$ o_fbr_write_flag $end
+$var wire 1 I" o_finished $end
+$var wire 3 "$ o_func_abort_stb [2:0] $end
+$var wire 8 #$ o_func_enable [7:0] $end
+$var wire 8 $$ o_func_int_enable [7:0] $end
+$var wire 4 %$ o_func_select [3:0] $end
+$var wire 16 &$ o_max_f0_block_size [15:0] $end
+$var wire 1 J" o_ready $end
+$var wire 1 ~" o_sdr_104 $end
+$var wire 1 !# o_sdr_12 $end
+$var wire 1 "# o_sdr_25 $end
+$var wire 1 ## o_sdr_50 $end
+$var wire 1 $# o_soft_reset $end
+$var wire 1 ] rst $end
+$scope module cccr $end
+$var wire 1 '$ SMPC $end
+$var wire 1 ^ clk $end
+$var wire 1 ($ i_activate $end
+$var wire 8 )$ i_address [7:0] $end
+$var wire 8 *$ i_data_in [7:0] $end
+$var wire 1 F" i_data_stb $end
+$var wire 1 K" i_data_txrx_in_progress_flag $end
+$var wire 1 O" i_func_active $end
+$var wire 8 +$ i_func_exec_status [7:0] $end
+$var wire 8 ,$ i_func_int_pending [7:0] $end
+$var wire 8 -$ i_func_ready [7:0] $end
+$var wire 8 .$ i_func_ready_for_data [7:0] $end
+$var wire 1 N i_write_flag $end
+$var wire 18 /$ main_cis_addr [17:0] $end
+$var wire 1 Y" o_1_bit_mode $end
+$var wire 1 Z" o_4_bit_mode $end
+$var wire 1 [" o_8_bit_mode $end
+$var wire 1 ]" o_ddr_50 $end
+$var wire 1 ^" o_driver_type_a $end
+$var wire 1 _" o_driver_type_b $end
+$var wire 1 `" o_driver_type_c $end
+$var wire 1 a" o_driver_type_d $end
+$var wire 1 ~" o_sdr_104 $end
+$var wire 1 !# o_sdr_12 $end
+$var wire 1 "# o_sdr_25 $end
+$var wire 1 ## o_sdr_50 $end
+$var wire 1 ] rst $end
+$var reg 3 0$ abort_sel [2:0] $end
+$var reg 3 1$ bus_speed_select [2:0] $end
+$var reg 2 2$ bus_width [1:0] $end
+$var reg 2 3$ driver_type [1:0] $end
+$var reg 1 4$ o_bus_release_req_stb $end
+$var reg 8 5$ o_data_out [7:0] $end
+$var reg 1 6$ o_en_4bit_block_int $end
+$var reg 1 7$ o_en_card_detect_n $end
+$var reg 1 8$ o_enable_async_interrupt $end
+$var reg 1 9$ o_enable_spi_interrupt $end
+$var reg 3 :$ o_func_abort_stb [2:0] $end
+$var reg 8 ;$ o_func_enable [7:0] $end
+$var reg 8 <$ o_func_int_enable [7:0] $end
+$var reg 4 =$ o_func_select [3:0] $end
+$var reg 16 >$ o_max_f0_block_size [15:0] $end
+$var reg 1 ?$ o_soft_reset $end
+$var reg 4 @$ state [3:0] $end
+$upscope $end
+$scope module cis $end
+$var wire 1 ^ clk $end
+$var wire 1 C" i_activate $end
+$var wire 18 A$ i_address [17:0] $end
+$var wire 1 F" i_data_stb $end
+$var wire 1 ] rst $end
+$var reg 8 B$ o_data_out [7:0] $end
+$upscope $end
+$scope begin genblk1 $end
+$scope module fbr1 $end
+$var wire 24 C$ cis_addr [23:0] $end
+$var wire 1 ^ clk $end
+$var wire 1 D$ csa_support $end
+$var wire 4 E$ func_type_ext [3:0] $end
+$var wire 1 F$ i_activate $end
+$var wire 8 G$ i_address [7:0] $end
+$var wire 8 H$ i_data_in [7:0] $end
+$var wire 1 F" i_data_stb $end
+$var wire 1 N i_write_flag $end
+$var wire 16 I$ product_id [15:0] $end
+$var wire 1 ] rst $end
+$var wire 1 J$ support_pwr_sel $end
+$var wire 16 K$ vendor_id [15:0] $end
+$var reg 16 L$ o_block_size [15:0] $end
+$var reg 1 M$ o_csa_en $end
+$var reg 8 N$ o_data_out [7:0] $end
+$var reg 4 O$ o_pwr_mode [3:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module phy $end
+$var wire 1 P$ busy $end
+$var wire 1 l cmd_phy_idle $end
+$var wire 7 Q$ crc [6:0] $end
+$var wire 1 R$ crc_bit $end
+$var wire 1 n ddr_en $end
+$var wire 1 z interrupt $end
+$var wire 1 5" read_wait $end
+$var wire 40 S$ rsps [39:0] $end
+$var wire 1 T$ rsps_fail $end
+$var wire 8 U$ rsps_len [7:0] $end
+$var wire 1 ] rst $end
+$var wire 1 9" sd1_phy $end
+$var wire 1 :" sd4_phy $end
+$var wire 1 ^ sdio_clk $end
+$var wire 1 <" sdio_cmd_in $end
+$var wire 1 >" sdio_data_dir $end
+$var wire 4 V$ sdio_data_in [3:0] $end
+$var wire 4 W$ sdio_data_out [3:0] $end
+$var wire 1 A" spi_phy $end
+$var reg 8 X$ bit_count [7:0] $end
+$var reg 6 Y$ cmd [5:0] $end
+$var reg 32 Z$ cmd_arg [31:0] $end
+$var reg 8 [$ cmd_crc [7:0] $end
+$var reg 1 \$ cmd_crc_good_stb $end
+$var reg 1 ]$ cmd_phy $end
+$var reg 1 ^$ cmd_stb $end
+$var reg 1 _$ crc_hold $end
+$var reg 1 `$ crc_rst $end
+$var reg 128 a$ lcl_rsps [127:0] $end
+$var reg 1 b$ sdio_cmd_dir $end
+$var reg 1 c$ sdio_cmd_out $end
+$var reg 4 d$ state [3:0] $end
+$var reg 1 e$ txrx_dir $end
+$scope module crc_gen $end
+$var wire 1 R$ bit $end
+$var wire 1 ^ clk $end
+$var wire 7 f$ crc [6:0] $end
+$var wire 1 g$ hold $end
+$var wire 1 h$ rst $end
+$var reg 8 i$ outval [7:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module demo $end
+$var wire 1 j$ blk $end
+$var wire 1 ! clk $end
+$var wire 1 k$ count_finished $end
+$var wire 1 " i_abort $end
+$var wire 1 # i_activate $end
+$var wire 18 l$ i_addr [17:0] $end
+$var wire 1 $ i_block_mode $end
+$var wire 16 m$ i_block_size [15:0] $end
+$var wire 1 / i_csa_en $end
+$var wire 18 n$ i_data_count [17:0] $end
+$var wire 1 L i_data_stb $end
+$var wire 1 & i_enable $end
+$var wire 1 G i_host_rdy $end
+$var wire 1 ( i_inc_addr $end
+$var wire 1 ) i_interrupt_enable $end
+$var wire 1 o$ i_pwr_mode $end
+$var wire 1 I i_rd_after_wr $end
+$var wire 1 p$ i_request_interrupt $end
+$var wire 1 q$ i_request_read_wait $end
+$var wire 8 r$ i_write_data [7:0] $end
+$var wire 1 N i_write_flag $end
+$var wire 12 s$ mem_addr [11:0] $end
+$var wire 32 t$ mem_read_data [31:0] $end
+$var wire 1 % o_busy $end
+$var wire 1 + o_interrupt $end
+$var wire 1 * o_interrupt_pending $end
+$var wire 1 , o_read_wait $end
+$var wire 1 - o_ready $end
+$var wire 1 u$ rst $end
+$var wire 1 ^ sdio_clk $end
+$var reg 32 v$ address [31:0] $end
+$var reg 32 w$ block_data_count [31:0] $end
+$var reg 2 x$ byte_count [1:0] $end
+$var reg 18 y$ data_count [17:0] $end
+$var reg 32 z$ mem_write_data [31:0] $end
+$var reg 1 {$ mem_write_stb $end
+$var reg 1 |$ o_data_rdy $end
+$var reg 1 }$ o_data_stb $end
+$var reg 1 ~$ o_finished $end
+$var reg 8 !% o_read_data [7:0] $end
+$var reg 4 "% state [3:0] $end
+$scope module mem $end
+$var wire 12 #% addra [11:0] $end
+$var wire 12 $% addrb [11:0] $end
+$var wire 1 ^ clka $end
+$var wire 1 j$ clkb $end
+$var wire 32 %% dina [31:0] $end
+$var wire 32 &% doutb [31:0] $end
+$var wire 1 '% wea $end
+$var reg 32 (% dout [31:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+bx (%
+x'%
+bx &%
+bz %%
+bx $%
+bx #%
+bx "%
+bx !%
+x~$
+x}$
+x|$
+x{$
+bx z$
+bx y$
+bx x$
+bx w$
+bx v$
+zu$
+bx t$
+bx s$
+bx r$
+zq$
+zp$
+zo$
+bx n$
+bx m$
+bx l$
+xk$
+zj$
+bx i$
+xh$
+xg$
+bx f$
+xe$
+bx d$
+xc$
+xb$
+bx a$
+x`$
+x_$
+x^$
+x]$
+x\$
+bx [$
+bx Z$
+bx Y$
+bx X$
+bz W$
+bz V$
+b101000 U$
+zT$
+bx S$
+xR$
+bx Q$
+xP$
+bx O$
+bx N$
+xM$
+bx L$
+b1 K$
+0J$
+b0 I$
+bz H$
+bx G$
+zF$
+b0 E$
+0D$
+b1000000010010 C$
+bx B$
+bx A$
+bx @$
+x?$
+bx >$
+bx =$
+bx <$
+bx ;$
+bx :$
+x9$
+x8$
+x7$
+x6$
+bx 5$
+x4$
+bx 3$
+bx 2$
+bx 1$
+bx 0$
+b1000000000000 /$
+bz .$
+bz -$
+bz ,$
+bz +$
+bz *$
+bx )$
+z($
+z'$
+bx &$
+bx %$
+bx $$
+bx #$
+bx "$
+z!$
+bz ~#
+z}#
+z|#
+bz {#
+bz z#
+bz y#
+zx#
+zw#
+bz v#
+zu#
+bz t#
+bz s#
+zr#
+bz q#
+bz p#
+zo#
+bz n#
+bz m#
+zl#
+bz k#
+bz j#
+zi#
+bz h#
+bz g#
+zf#
+bz e#
+bx d#
+zc#
+bx b#
+bz a#
+bz `#
+bz _#
+bz ^#
+bz ]#
+z\#
+z[#
+zZ#
+bz Y#
+zX#
+zW#
+zV#
+bz U#
+zT#
+zS#
+zR#
+bz Q#
+zP#
+zO#
+zN#
+bz M#
+zL#
+zK#
+zJ#
+bz I#
+zH#
+zG#
+zF#
+bz E#
+zD#
+zC#
+zB#
+bz A#
+bz @#
+bx ?#
+bx >#
+bx =#
+bx <#
+x;#
+bx :#
+bx 9#
+x8#
+bx 7#
+bx 6#
+x5#
+x4#
+x3#
+bx 2#
+x1#
+bx 0#
+x/#
+bx .#
+x-#
+bx ,#
+x+#
+x*#
+x)#
+x(#
+x'#
+x&#
+bx %#
+x$#
+x##
+x"#
+x!#
+x~"
+b101000 }"
+bx |"
+z{"
+zz"
+zy"
+bz x"
+bz w"
+bx v"
+bx u"
+bx t"
+bx s"
+bz r"
+bz q"
+bz p"
+bz o"
+bz n"
+bz m"
+bz l"
+bz k"
+bz j"
+bz i"
+bz h"
+bz g"
+bx f"
+bx e"
+zd"
+xc"
+xb"
+xa"
+x`"
+x_"
+x^"
+x]"
+x\"
+x["
+xZ"
+xY"
+bx X"
+zW"
+zV"
+bz U"
+bz T"
+bz S"
+bx R"
+bz Q"
+bz P"
+zO"
+bx N"
+bx M"
+xL"
+zK"
+zJ"
+zI"
+zH"
+bz G"
+zF"
+zE"
+bz D"
+xC"
+xB"
+zA"
+bz @"
+bz ?"
+z>"
+x="
+z<"
+x;"
+z:"
+z9"
+x8"
+b101000 7"
+bx 6"
+z5"
+bx 4"
+bx 3"
+bz 2"
+x1"
+bz 0"
+bx /"
+bx ."
+bz -"
+bz ,"
+bz +"
+bz *"
+bz )"
+bz ("
+bz '"
+bz &"
+bz %"
+bz $"
+bz #"
+bz ""
+bz !"
+bx ~
+bx }
+bz |
+b0 {
+zz
+zy
+bx x
+bx w
+bx v
+bx u
+bx t
+zs
+xr
+zq
+xp
+xo
+zn
+xm
+xl
+xk
+bx j
+bx i
+zh
+zg
+zf
+ze
+bx d
+bx c
+bx b
+bx a
+b0 `
+0_
+z^
+z]
+z\
+z[
+zZ
+zY
+zX
+zW
+zV
+xU
+bz T
+zS
+xR
+bz Q
+zP
+bz O
+xN
+bx M
+zL
+bx K
+xJ
+xI
+bx H
+zG
+xF
+bx E
+zD
+bx C
+bz B
+zA
+bz @
+bz ?
+z>
+bz =
+bz <
+z;
+bz :
+bz 9
+z8
+bz 7
+bz 6
+z5
+bz 4
+bz 3
+z2
+bz 1
+bx 0
+x/
+bx .
+z-
+x,
+x+
+x*
+z)
+x(
+x'
+z&
+x%
+x$
+x#
+x"
+z!
+$end
+#1
