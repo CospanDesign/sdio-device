@@ -109,8 +109,18 @@ module sdio_device_stack (
 
   //FPGA Interface
   input               i_sdio_clk,
+/*
   inout               io_sdio_cmd,
-  inout   [3:0]       io_sdio_data
+  inout   [3:0]       io_sdio_data,
+*/
+
+  output              o_sd_cmd_dir,
+  input               i_sd_cmd_in,
+  output              o_sd_cmd_out,
+
+  output              o_sd_data_dir,
+  output  [7:0]       o_sd_data_out,
+  input   [7:0]       i_sd_data_in
 
 );
 
@@ -241,12 +251,14 @@ sdio_device_phy phy(
   //FPGA Interface
   .ddr_en                   (ddr_en                 ),
   .sdio_clk                 (sdio_clk               ),
-  .sdio_cmd_in              (sdio_cmd_in            ),
-  .sdio_cmd_out             (sdio_cmd_out           ),
-  .sdio_cmd_dir             (sdio_cmd_dir           ),
-  .sdio_data_in             (sdio_data_in           ),
-  .sdio_data_out            (sdio_data_out          ),
-  .sdio_data_dir            (sdio_data_dir          )
+
+  .sdio_cmd_dir             (o_sd_cmd_dir           ),
+  .sdio_cmd_in              (i_sd_cmd_in            ),
+  .sdio_cmd_out             (o_sd_cmd_out           ),
+
+  .sdio_data_dir            (o_sd_data_dir          ),
+  .sdio_data_in             (i_sd_data_in           ),
+  .sdio_data_out            (o_sd_data_out          )
 
 );
 

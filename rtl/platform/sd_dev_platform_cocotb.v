@@ -46,11 +46,20 @@ input               i_sd_data_dir,
 output        [7:0] o_sd_data_in,
 input         [7:0] i_sd_data_out,
 
-input               i_phy_out_clk,
+input               i_phy_clk,
 inout               io_phy_sd_cmd,
 inout         [3:0] io_phy_sd_data
 
 );
+
+//Local Parameters
+//Registers/Wires
+reg                 toggle;
+wire                pos_edge_clk;
+reg                 prev_phy_clk;
+wire          [7:0] data_out;
+//Submodules
+//Asynchronous Logic
 
 assign  o_out_clk_x2 = clk;
 assign  o_locked  =  1;
@@ -58,19 +67,41 @@ assign  o_locked  =  1;
 assign  io_phy_sd_cmd = i_sd_cmd_dir  ? i_sd_cmd_out : 1'hZ;
 assign  o_sd_cmd_in   = io_phy_sd_cmd;
 
-assign  io_phy_sd_data= i_sd_data_dir ? i_sd_data_out: 8'hZ;
+assign  io_phy_sd_data= i_sd_data_dir ? data_out: 8'hZ;
 assign  o_sd_data_in  = io_phy_sd_data;
 
+assign  pos_edge_clk  = (i_phy_clk & !prev_phy_clk);
 
+assign  data_out      = pos_edge_clk ?  { i_sd_data_out[0],
+                                          i_sd_data_out[2],
+                                          i_sd_data_out[4],
+                                          i_sd_data_out[6]} :
+                                        { i_sd_data_out[1],
+                                          i_sd_data_out[3],
+                                          i_sd_data_out[5],
+                                          i_sd_data_out[7]};
+assign  o_sd_data_in  = pos_edge_clk ?  { io_phy_sd_data[0],
+                                          io_phy_sd_data[2],
+                                          io_phy_sd_data[4],
+                                          io_phy_sd_data[6]} :
+                                        { io_phy_sd_data[1],
+                                          io_phy_sd_data[3],
+                                          io_phy_sd_data[5],
+                                          io_phy_sd_data[7]};
+
+//Synchronous Logic
 
 always @ (posedge clk) begin
   if (rst) begin
     o_out_clk     <=  0;
-    o_phy_out_clk <=  0;
+    prev_phy_clk  <=  0;
+    toggle        <=  0;
+    
   end
   else begin
     o_out_clk     <= ~o_out_clk;
-    o_phy_out_clk <= ~o_phy_out_clk;
+    prev_phy_clk  <=  i_phy_clk;
+
   end
 end
 endmodule

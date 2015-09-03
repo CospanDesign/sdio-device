@@ -29,13 +29,16 @@ module sdio_device_phy (
   //FPGA Interface
   output              ddr_en,
   input               sdio_clk,
+
+  output  reg         sdio_cmd_dir,
+
   input               sdio_cmd_in,
   output  reg         sdio_cmd_out,
-  output  reg         sdio_cmd_dir,
   //XXX: Need to hook this up
-  input   [3:0]       sdio_data_in,
-  output  [3:0]       sdio_data_out,
-  output              sdio_data_dir
+  output              sdio_data_dir,
+
+  input   [7:0]       sdio_data_in,
+  output  [7:0]       sdio_data_out
 );
 
 //Local Parameters
