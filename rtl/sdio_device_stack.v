@@ -114,6 +114,7 @@ module sdio_device_stack (
   inout   [3:0]       io_sdio_data,
 */
 
+
   output              o_sd_cmd_dir,
   input               i_sd_cmd_in,
   output              o_sd_cmd_out,
@@ -230,35 +231,34 @@ sdio_device_phy phy(
   .rst                      (rst                    ),
 
   //Configuration
-  .spi_phy                  (spi_phy                ),/* Flag: SPI PHY (not supported now) */
-  .sd1_phy                  (sd1_phy                ),/* Flag: SD  PHY with one data lane */
-  .sd4_phy                  (sd4_phy                ),/* Flag: SD  PHY with four data lanes */
+  .i_spi_phy                  (spi_phy                ),/* Flag: SPI PHY (not supported now) */
+  .i_sd1_phy                  (sd1_phy                ),/* Flag: SD  PHY with one data lane */
+  .i_sd4_phy                  (sd4_phy                ),/* Flag: SD  PHY with four data lanes */
 
-  .cmd_phy_idle             (cmd_phy_idle           ),/* PHY -> CMD: Command portion of phy layer is IDLE */
+  .o_cmd_phy_idle             (cmd_phy_idle           ),/* PHY -> CMD: Command portion of phy layer is IDLE */
 
   //Data Link Interface
-  .cmd_stb                  (cmd_stb                ),/* PHY -> CMD: Command signal strobe */
-  .cmd_crc_good_stb         (cmd_crc_good_stb       ),/* PHY -> CMD: CRC is good */
-  .cmd                      (cmd                    ),/* PHY -> CMD: Command */
-  .cmd_arg                  (cmd_arg                ),/* PHY -> CMD: Command Arg */
+  .o_cmd_stb                  (cmd_stb                ),/* PHY -> CMD: Command signal strobe */
+  .o_cmd_crc_good_stb         (cmd_crc_good_stb       ),/* PHY -> CMD: CRC is good */
+  .o_cmd                      (cmd                    ),/* PHY -> CMD: Command */
+  .o_cmd_arg                  (cmd_arg                ),/* PHY -> CMD: Command Arg */
+  .i_rsps_stb                 (rsps_stb               ),/* CMD -> PHY: Response initiate */
+  .i_rsps                     (rsps                   ),/* CMD -> PHY: Response Value */
+  .i_rsps_len                 (rsps_len               ),/* CMD -> PHY: Response Length */
 
-  .rsps                     (rsps                   ),/* CMD -> PHY: Response Value */
-  .rsps_len                 (rsps_len               ),/* CMD -> PHY: Response Length */
-
-  .interrupt                (interrupt              ),/* Interrupt */
-  .read_wait                (read_wait              ),/* SDIO Device is busy working on generated a read */
+  .i_interrupt                (interrupt              ),/* Interrupt */
+  .i_read_wait                (read_wait              ),/* SDIO Device is busy working on generated a read */
 
   //FPGA Interface
-  .ddr_en                   (ddr_en                 ),
-  .sdio_clk                 (sdio_clk               ),
+  .i_sdio_clk                 (sdio_clk               ),
 
-  .sdio_cmd_dir             (o_sd_cmd_dir           ),
-  .sdio_cmd_in              (i_sd_cmd_in            ),
-  .sdio_cmd_out             (o_sd_cmd_out           ),
+  .o_sdio_cmd_dir             (o_sd_cmd_dir           ),
+  .i_sdio_cmd_in              (i_sd_cmd_in            ),
+  .o_sdio_cmd_out             (o_sd_cmd_out           ),
 
-  .sdio_data_dir            (o_sd_data_dir          ),
-  .sdio_data_in             (i_sd_data_in           ),
-  .sdio_data_out            (o_sd_data_out          )
+  .o_sdio_data_dir            (o_sd_data_dir          ),
+  .i_sdio_data_in             (i_sd_data_in           ),
+  .o_sdio_data_out            (o_sd_data_out          )
 
 );
 

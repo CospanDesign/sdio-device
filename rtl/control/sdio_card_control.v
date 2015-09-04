@@ -135,9 +135,9 @@ module sdio_card_control(
 
   input                     i_chip_select_n,
 
+  output  reg               o_rsps_stb,
   output        [39:0]      o_rsps,
   output        [7:0]       o_rsps_len,
-  output  reg               o_rsps_stb,
 
 
   //PHY Data Interface
@@ -192,6 +192,7 @@ wire                        enable_async_interrupt;
 wire                        data_txrx_in_progress_flag;
 
 reg             [3:0]       component_select;
+reg                         rsps_stb;
 
 
 
@@ -337,14 +338,16 @@ assign  cia_activate  = (o_func_num == 0);
 
 //synchronous logic
 always @ (posedge sdio_clk) begin
+  o_rsps_stb                <=  0;
   if (rst) begin
     response_type           <=  NORMAL_RESPONSE;
     response_value          <=  48'h00000000;
 //    response_value_extended <=  128'h00;
   end
-  else if (o_rsps_stb) begin
+  else if (rsps_stb) begin
     //Strobe
     //Process Command
+    o_rsps_stb                                                            <=  1;
     case (response_index)
       R1: begin
         //R1
@@ -398,6 +401,7 @@ always @ (posedge sdio_clk) begin
         response_value[`R7_PATTERN]                                       <=  i_cmd_arg[`CMD8_ARG_PATTERN];
       end
       default: begin
+        response_value                                                    <=  48'h0;
       end
     endcase
   end
@@ -405,7 +409,7 @@ end
 
 always @ (posedge sdio_clk) begin
   //Deassert Strobes
-  o_rsps_stb                        <=  0;
+  rsps_stb                          <=  0;
   o_func_activate                   <=  0;
 
   if (rst || o_soft_reset) begin
@@ -447,15 +451,16 @@ always @ (posedge sdio_clk) begin
         state                       <= INITIALIZE;
       end
       INITIALIZE: begin
+        $display ("Strobe!");
         case (i_cmd)
           `SD_CMD_IO_SEND_OP_CMD: begin
             response_index          <=  R4;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_SEND_RELATIVE_ADDR: begin
             state                   <=  STANDBY;
             response_index          <=  R6;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_GO_INACTIVE_STATE: begin
             state                   <=  INACTIVE;
@@ -470,14 +475,14 @@ always @ (posedge sdio_clk) begin
           `SD_CMD_SEND_RELATIVE_ADDR: begin
             state                   <=  STANDBY;
             response_index          <=  R6;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_SEL_DESEL_CARD: begin
             if (register_card_address == i_cmd_arg[15:0]) begin
               state                 <= COMMAND;
             end
             response_index          <=  R1;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_GO_INACTIVE_STATE: begin
             state                   <=  INACTIVE;
@@ -499,7 +504,7 @@ always @ (posedge sdio_clk) begin
             o_func_data_count       <= 1;
             o_func_activate         <= 1;
             busy                    <= 1;
-            o_rsps_stb              <= 1;
+            rsps_stb                <= 1;
             state                   <= TRANSFER;
           end
           `SD_CMD_IO_RW_EXTENDED: begin
@@ -512,7 +517,7 @@ always @ (posedge sdio_clk) begin
             o_func_inc_addr         <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
             o_func_activate         <= 1;
             busy                    <= 1;
-            o_rsps_stb              <= 1;
+            rsps_stb                <= 1;
             state                   <= TRANSFER;
           end
           `SD_CMD_SEL_DESEL_CARD: begin
@@ -520,20 +525,20 @@ always @ (posedge sdio_clk) begin
               state                 <= STANDBY;
             end
             response_index          <=  R1;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_SEND_TUNNING_BLOCK: begin
             response_index          <=  R1;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
             o_tunning_block         <=  1;
           end
           `SD_CMD_IO_RW_DIRECT: begin
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_IO_RW_EXTENDED: begin
             response_index          <=  R5;
             state                   <=  TRANSFER;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           `SD_CMD_GO_INACTIVE_STATE: begin
             state                   <=  INACTIVE;
@@ -556,7 +561,7 @@ always @ (posedge sdio_clk) begin
             o_func_write_data       <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
             o_func_activate         <= 1;
             busy                    <= 1;
-            o_rsps_stb              <= 1;
+            rsps_stb                <= 1;
             o_func_data_count       <= 1;
           end
           default: begin
@@ -581,7 +586,7 @@ always @ (posedge sdio_clk) begin
           response_index            <=  R1;
           if (!i_chip_select_n) begin
             //We are in SD Mode
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
           else begin
             //XXX: SPI MODE IS NOT SUPPORTED YET!!!
@@ -597,21 +602,21 @@ always @ (posedge sdio_clk) begin
             vio_ocr                 <=  i_cmd_arg[`CMD5_ARG_VHS ];
             if (i_cmd_arg[`CMD5_ARG_VHS] & `VHS_DEFAULT_VALUE)
               voltage_select        <=  i_cmd_arg[`CMD5_ARG_VHS ] & `VHS_DEFAULT_VALUE;
-            o_rsps_stb              <=  1;
+            rsps_stb                <=  1;
           end
         end
         `SD_CMD_VOLTAGE_SWITCH: begin
           $display ("Voltage Mode Switch");
           illegal_command           <=  0;
           response_index            <=  R1;
-          o_rsps_stb                <=  1;
+          rsps_stb                  <=  1;
         end
         default: begin
         end
       endcase
     end
   end
-  else if (o_rsps_stb) begin
+  else if (rsps_stb) begin
     //Whenever a response is successful de-assert any of the errors, they will have been picked up by the response
     bad_crc                         <=  0;
     cmd_arg_out_of_range            <=  0;

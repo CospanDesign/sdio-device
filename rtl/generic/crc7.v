@@ -46,27 +46,34 @@ module crc7 #(
   input                 clk,
   input                 rst,
   input                 bit,
-  output        [6:0]   crc,
-  input                 hold
+  output reg    [6:0]   crc,
+  input                 en
 );
 //local parameters
 //registes/wires
-reg     [7:0] outval;
+wire          inv;
 
 //submodules
 //asynchronous logic
-assign  crc =   outval[6:0];
+assign  inv = bit ^ crc[6];                   // XOR required?
 //synchronous logic
 //XXX: Does this need to be asynchronous?
 
 always @ (posedge clk) begin
   if (rst) begin
-    outval  <=  SEED;
+    crc  <=  SEED;
   end
   else begin
     //Shift the output value
-    if (!hold)
-      outval[7:0] <=  bit ? ({outval[6:0], 1'b0} ^ POLYNOMIAL) : {outval[6:0], 1'b0};
+    if (en) begin
+      crc[6] <=  crc[5];
+      crc[5] <=  crc[4];
+      crc[4] <=  crc[3];
+      crc[3] <=  crc[2] ^ inv;
+      crc[2] <=  crc[1];
+      crc[1] <=  crc[0];
+      crc[0] <=  inv;
+    end
   end
 end
 

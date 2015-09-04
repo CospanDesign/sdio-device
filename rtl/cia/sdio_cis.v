@@ -43,13 +43,13 @@ module sdio_cis #(
 );
 //local parameters
 //registes/wires
-reg   [7:0]                 rom [FILE_LENGTH:0];
+reg   [7:0]                 rom [0:FILE_LENGTH];
 
 //submodules
 //asynchronous logic
 //synchronous logic
 initial begin
-  $readmemh(FILENAME, rom, 0, FILE_LENGTH - 1);
+  $readmemb(FILENAME, rom, 0, FILE_LENGTH - 1);
 end
 
 always @ (posedge clk) begin

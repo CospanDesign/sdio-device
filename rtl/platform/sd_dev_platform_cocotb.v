@@ -33,7 +33,7 @@ input               clk,
 input               rst,
 
 //SD Stack Interface
-output              o_locked,
+output  reg         o_locked,
 output  reg         o_out_clk,
 output              o_out_clk_x2,
 
@@ -58,11 +58,11 @@ reg                 toggle;
 wire                pos_edge_clk;
 reg                 prev_phy_clk;
 wire          [7:0] data_out;
+reg           [3:0] lock_count;
 //Submodules
 //Asynchronous Logic
 
 assign  o_out_clk_x2 = clk;
-assign  o_locked  =  1;
 
 assign  io_phy_sd_cmd = i_sd_cmd_dir  ? i_sd_cmd_out : 1'hZ;
 assign  o_sd_cmd_in   = io_phy_sd_cmd;
@@ -96,11 +96,19 @@ always @ (posedge clk) begin
     o_out_clk     <=  0;
     prev_phy_clk  <=  0;
     toggle        <=  0;
+    o_locked      <=  0;
+    lock_count    <=  0;
     
   end
   else begin
     o_out_clk     <= ~o_out_clk;
     prev_phy_clk  <=  i_phy_clk;
+    if (lock_count < 4'hF) begin
+      lock_count  <=  lock_count + 1;
+    end
+    else begin
+      o_locked    <=  1;
+    end
 
   end
 end

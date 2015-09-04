@@ -38,8 +38,9 @@ def crc7_gen(number, bit_count):
     value = regval
        
     final_val = (regval << 1) + 1
-    print "value: 0x%02X" % value
-    print "final: 0x%02X" % final_val
+    print "Number:\t\t\t\t0x%09X" % number
+    print "\tCRC:\t\t\t0x%02X" % value
+    print "\tCRC Shifted Value:\t0x%02X" % final_val
     return (regval & 0x7F)
     
 
@@ -54,11 +55,24 @@ def main(argv):
                         action="store_true",
                         help="Enable Debug Messages")
 
+    parser.add_argument("crc",
+                        nargs=1,
+                        default="0x4000000000",
+                        help="Enable Debug Messages")
+
+
     args = parser.parse_args()
+    print "input value: %s" % args.crc[0]
+    value = int(args.crc[0], 0)
+    print "Value = 0x%09X" % value
+    value = crc7_gen(value, 40) 
+
+
     #value = crc_generator(0x4000000000, 40) 
-    value = crc7_gen(0x4000000000, 40) 
-    value = crc7_gen(0x5100000000, 40)
-    value = crc7_gen(0x1100000900, 40)
+    #value = crc7_gen(0x4000000000, 40) 
+    #value = crc7_gen(0x4500000000, 40) 
+    #value = crc7_gen(0x5100000000, 40)
+    #value = crc7_gen(0x1100000900, 40)
 
 
 
