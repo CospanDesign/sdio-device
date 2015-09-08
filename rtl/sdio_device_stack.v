@@ -46,82 +46,139 @@ SOFTWARE.
 
 module sdio_device_stack (
 
-  input               sdio_clk,
-  input               rst,
+  input                     sdio_clk,
+  input                     rst,
+
+  output                    o_mem_en,
 
   //Function Configuration
-  output  [15:0]      o_block_size,           //Maximum Size of block transfer
-  output  [7:0]       o_func_enable,          //Bitmask Function Enable
-  input   [7:0]       i_func_ready,           //Bitmask Function is Ready
-  output  [2:0]       o_func_abort,
-  output  [7:0]       o_func_int_en,
-  input   [7:0]       i_func_int_pending,
-  input   [7:0]       i_func_exec_status,
+  output          [7:0]     o_func_enable,          //Bitmask Function Enable
+  input           [7:0]     i_func_ready,           //Bitmask Function is Ready
+  output          [2:0]     o_func_abort,
+  output          [7:0]     o_func_int_en,
+  input           [7:0]     i_func_int_pending,
+  input           [7:0]     i_func_exec_status,
 
   // Function Interface From CIA
-  output              o_fbr1_csa_en,
-  output  [3:0]       o_fbr1_pwr_mode,
-  output  [15:0]      o_fbr1_block_size,
+  output                    o_fbr1_csa_en,
+  output          [3:0]     o_fbr1_pwr_mode,
+  output          [15:0]    o_fbr1_block_size,
 
-  output              o_fbr2_csa_en,
-  output  [3:0]       o_fbr2_pwr_mode,
-  output  [15:0]      o_fbr2_block_size,
+  output                    o_fbr2_csa_en,
+  output          [3:0]     o_fbr2_pwr_mode,
+  output          [15:0]    o_fbr2_block_size,
 
-  output              o_fbr3_csa_en,
-  output  [3:0]       o_fbr3_pwr_mode,
-  output  [15:0]      o_fbr3_block_size,
+  output                    o_fbr3_csa_en,
+  output          [3:0]     o_fbr3_pwr_mode,
+  output          [15:0]    o_fbr3_block_size,
 
-  output              o_fbr4_csa_en,
-  output  [3:0]       o_fbr4_pwr_mode,
-  output  [15:0]      o_fbr4_block_size,
+  output                    o_fbr4_csa_en,
+  output          [3:0]     o_fbr4_pwr_mode,
+  output          [15:0]    o_fbr4_block_size,
 
-  output              o_fbr5_csa_en,
-  output  [3:0]       o_fbr5_pwr_mode,
-  output  [15:0]      o_fbr5_block_size,
+  output                    o_fbr5_csa_en,
+  output          [3:0]     o_fbr5_pwr_mode,
+  output          [15:0]    o_fbr5_block_size,
 
-  output              o_fbr6_csa_en,
-  output  [3:0]       o_fbr6_pwr_mode,
-  output  [15:0]      o_fbr6_block_size,
+  output                    o_fbr6_csa_en,
+  output          [3:0]     o_fbr6_pwr_mode,
+  output          [15:0]    o_fbr6_block_size,
 
-  output              o_fbr7_csa_en,
-  output  [3:0]       o_fbr7_pwr_mode,
-  output  [15:0]      o_fbr7_block_size,
+  output                    o_fbr7_csa_en,
+  output          [3:0]     o_fbr7_pwr_mode,
+  output          [15:0]    o_fbr7_block_size,
 
 
   //Function Bus
-  output              o_func_activate,
-  input               i_func_finished,
+  output                    o_func_activate,
+  input                     i_func_finished,
 
-  output              o_func_inc_addr,
-  output              o_func_block_mode,
+  output                    o_func_inc_addr,
+  output                    o_func_block_mode,
 
-  output  [3:0]       o_func_num,
-  output              o_func_write_flag,
-  output              o_func_rd_after_wr,
-  output  [17:0]      o_func_addr,
-  output  [7:0]       o_func_write_data,
-  input   [7:0]       i_func_read_data,
-  input               o_func_data_rdy,
-  output              i_func_host_rdy,
-  output  [17:0]      o_func_data_count,
+  //Function 1 Interface
+  output                    o_func1_wr_stb,
+  output          [7:0]     o_func1_wr_data,
+  input                     i_func1_rd_stb,
+  input           [7:0]     i_func1_rd_data,
+  output                    o_func1_hst_rdy,
+  input                     i_func1_com_rdy,
 
-  input   [7:0]       i_interrupt,
+  //Function 2 Interface
+  output                    o_func2_wr_stb,
+  output          [7:0]     o_func2_wr_data,
+  input                     i_func2_rd_stb,
+  input           [7:0]     i_func2_rd_data,
+  output                    o_func2_hst_rdy,
+  input                     i_func2_com_rdy,
+
+  //Function 3 Interface
+  output                    o_func3_wr_stb,
+  output          [7:0]     o_func3_wr_data,
+  input                     i_func3_rd_stb,
+  input           [7:0]     i_func3_rd_data,
+  output                    o_func3_hst_rdy,
+  input                     i_func3_com_rdy,
+
+  //Function 4 Interface
+  output                    o_func4_wr_stb,
+  output          [7:0]     o_func4_wr_data,
+  input                     i_func4_rd_stb,
+  input           [7:0]     i_func4_rd_data,
+  output                    o_func4_hst_rdy,
+  input                     i_func4_com_rdy,
+
+  //Function 5 Interface
+  output                    o_func5_wr_stb,
+  output          [7:0]     o_func5_wr_data,
+  input                     i_func5_rd_stb,
+  input           [7:0]     i_func5_rd_data,
+  output                    o_func5_hst_rdy,
+  input                     i_func5_com_rdy,
+
+  //Function 6 Interface
+  output                    o_func6_wr_stb,
+  output          [7:0]     o_func6_wr_data,
+  input                     i_func6_rd_stb,
+  input           [7:0]     i_func6_rd_data,
+  output                    o_func6_hst_rdy,
+  input                     i_func6_com_rdy,
+
+  //Function 7 Interface
+  output                    o_func7_wr_stb,
+  output          [7:0]     o_func7_wr_data,
+  input                     i_func7_rd_stb,
+  input           [7:0]     i_func7_rd_data,
+  output                    o_func7_hst_rdy,
+  input                     i_func7_com_rdy,
+
+  //Memory Interface
+  output                    o_mem_wr_stb,
+  output          [7:0]     o_mem_wr_data,
+  input                     i_mem_rd_stb,
+  input           [7:0]     i_mem_rd_data,
+  output                    o_mem_hst_rdy,
+  input                     i_mem_com_rdy,
+
+
+
+  output          [3:0]     o_func_num,
+  output                    o_func_rd_after_wr,
+  output          [17:0]    o_func_addr,
+  output          [9:0]     o_func_data_count,
+
+  input           [7:0]     i_interrupt,
 
   //FPGA Interface
-  input               i_sdio_clk,
-/*
-  inout               io_sdio_cmd,
-  inout   [3:0]       io_sdio_data,
-*/
+  input                     i_sdio_clk,
 
+  output                    o_sd_cmd_dir,
+  input                     i_sd_cmd_in,
+  output                    o_sd_cmd_out,
 
-  output              o_sd_cmd_dir,
-  input               i_sd_cmd_in,
-  output              o_sd_cmd_out,
-
-  output              o_sd_data_dir,
-  output  [7:0]       o_sd_data_out,
-  input   [7:0]       i_sd_data_in
+  output                    o_sd_data_dir,
+  output          [7:0]     o_sd_data_out,
+  input           [7:0]     i_sd_data_in
 
 );
 
@@ -150,12 +207,14 @@ wire        [31:0]  cmd_arg;
 
 wire        [39:0]  rsps;
 wire        [7:0]   rsps_len;
+wire                rsps_fail;
 
 wire                interrupt;
 wire                read_wait;
 wire                chip_select_n;
 
 //Function Level
+wire                cmd_bus_sel;
 wire                func_activate;
 wire                func_inc_addr;
 wire                func_block_mode;
@@ -163,102 +222,347 @@ wire                func_block_mode;
 wire                tunning_block;
 
 
+
+wire                cia_phy_i_data_ready;
+wire                cia_phy_i_data_stb;
+wire  [7:0]         cia_phy_i_data_in;
+wire                cia_phy_o_ready;
+wire  [7:0]         cia_phy_o_data_out;
+wire                cia_phy_o_data_stb;
+wire                cia_phy_o_finished;
+
+wire                soft_reset;
+
+//SDIO Configuration Flags
+wire                en_card_detect_n;
+wire                en_4bit_block_int;
+wire                bus_release_req_stb;
+wire        [15:0]  max_f0_block_size;
+
+wire                cfg_1_bit_mode;
+wire                cfg_4_bit_mode;
+wire                cfg_8_bit_mode;
+
+wire                sdr_12;
+wire                sdr_25;
+wire                sdr_50;
+wire                ddr_50;
+wire                sdr_104;
+
+wire                driver_type_a;
+wire                driver_type_b;
+wire                driver_type_c;
+wire                driver_type_d;
+wire                enable_async_interrupt;
+
+
+wire                cia_activate;
+
+wire        [7:0]   o_func_enable;
+wire        [7:0]   i_func_ready;
+wire        [7:0]   o_func_int_enable;
+wire        [7:0]   i_func_int_pending;
+wire        [7:0]   i_func_ready_for_data;
+wire        [2:0]   o_func_abort_stb;
+wire        [3:0]   o_func_select;
+wire        [7:0]   i_func_exec_status;
+wire                func_active;
+
+wire        [7:0]   cmd_func_write_data;
+wire        [7:0]   cmd_func_read_data;
+wire                cmd_func_data_rdy;
+wire                cmd_func_host_rdy;
+wire        [17:0]  cmd_func_data_count;
+
+
+wire                cia_wr_stb;
+wire        [7:0]   cia_wr_data;
+wire                cia_rd_stb;
+wire        [7:0]   cia_rd_data;
+wire                cia_hst_rdy;
+wire                cia_com_rdy;
+
+
+wire                data_phy_wr_stb;
+wire        [7:0]   data_phy_wr_data;
+wire                data_phy_rd_stb;
+wire        [7:0]   data_phy_rd_data;
+wire                data_phy_hst_rdy;
+wire                data_phy_com_rdy;
+
+
 //Submodules
 sdio_card_control card_controller (
-  .sdio_clk                 (sdio_clk               ),/* Run from the SDIO Clock */
-  .rst                      (rst                    ),
 
-  .o_func_activate          (func_activate          ),/* CMD -> FUNC: Start a function layer transaction */
-  .i_func_finished          (func_finished          ),/* FUNC -> CMD: Function has finished */
-  .o_func_inc_addr          (func_inc_addr          ),/* CMD -> FUNC: Increment the address after every read/write */
-  .o_func_block_mode        (func_block_mode        ),/* CMD -> FUNC: This is a block level transfer, not byte */
+  .sdio_clk                 (sdio_clk                   ),/* Run from the SDIO Clock */
+  .rst                      (rst                        ),
+  .i_soft_reset             (i_soft_reset               ),
 
-  .o_func_num               (o_func_num             ),/* CMD -> FUNC: Function Number to activate */
-  .o_func_write_flag        (o_func_write_flag      ),/* CMD -> FUNC: We are writing */
-  .o_func_rd_after_wr       (o_func_rd_after_wr     ),/* CMD -> FUNC: Read the value after a write */
-  .o_func_addr              (o_func_addr            ),/* CMD -> FUNC: Address we are talking to */
-  .o_func_write_data        (o_func_write_data      ),/* CMD -> FUNC: Data to Write */
-  .i_func_read_data         (i_func_read_data       ),/* FUNC -> CMD: Read Data */
-  .i_func_data_rdy          (i_func_data_rdy        ),/* FUNC -> CMD: Function is ready for write data */
-  .o_func_host_rdy          (o_func_host_rdy        ),/* CMD -> FUNC: Host is ready to read data */
-  .o_func_data_count        (o_func_data_count      ),/* CMD -> FUNC: number of data bytes/blocks to read/write */
+  .o_mem_en                 (o_mem_en                   ),
+  .o_func_num               (o_func_num                 ),/* CMD -> FUNC: Function Number to activate */
+  .o_func_activate          (o_func_activate            ),/* CMD -> FUNC: Start a function layer transaction */
+  .i_func_finished          (i_func_finished            ),/* FUNC -> CMD: Function has finished */
+  .o_func_inc_addr          (o_func_inc_addr            ),/* CMD -> FUNC: Inc address after every read/write */
+  .o_func_block_mode        (o_func_block_mode          ),/* CMD -> FUNC: This is a block level transfer, not byte */
+  .o_func_write_flag        (o_func_write_flag          ),/* CMD -> FUNC: We are writing */
+  .o_func_rd_after_wr       (o_func_rd_after_wr         ),/* CMD -> FUNC: Read the value after a write */
+  .o_func_addr              (o_func_addr                ),/* CMD -> FUNC: Address we are talking to */
+  .o_func_data_count        (o_func_data_count          ),/* CMD -> FUNC: number of data bytes/blocks to read/write */
 
-  .o_tunning_block          (tunning_block          ),
+  //Command Data Bus
+  .o_cmd_bus_sel            (cmd_bus_sel                ),/* CMD -> FUNC: Indicate that data will be on command bus */
+  .o_cmd_func_write_stb     (cmd_func_write_stb         ),/* CMD -> FUNC: Data Write strobe out */
+  .o_cmd_func_write_data    (cmd_func_write_data        ),/* CMD -> FUNC: Data to Write */
+  .i_cmd_func_read_stb      (cmd_func_read_stb          ),/* CMD -> FUNC: Data Read Strobe */
+  .i_cmd_func_read_data     (cmd_func_read_data         ),/* FUNC -> CMD: Read Data */
+  .i_cmd_func_data_rdy      (cmd_func_data_rdy          ),/* FUNC -> CMD: Function is ready for write data */
+  .o_cmd_func_host_rdy      (cmd_func_host_rdy          ),/* CMD -> FUNC: Host is ready to read data */
 
-  // Function Interface From CIA
-  .o_fbr1_csa_en            (o_fbr1_csa_en          ),
-  .o_fbr1_pwr_mode          (o_fbr1_pwr_mode        ),
-  .o_fbr1_block_size        (o_fbr1_block_size      ),
+  .o_tunning_block          (tunning_block              ),
 
-  .o_fbr2_csa_en            (o_fbr2_csa_en          ),
-  .o_fbr2_pwr_mode          (o_fbr2_pwr_mode        ),
-  .o_fbr2_block_size        (o_fbr2_block_size      ),
+  .i_cmd_phy_idle           (cmd_phy_idle               ),/* PHY -> CMD: Command portion of phy layer is IDLE */
+  .i_cmd_stb                (cmd_stb                    ),/* PHY -> CMD: Command signal strobe */
+  .i_cmd_crc_good_stb       (cmd_crc_good_stb           ),/* PHY -> CMD: CRC is good */
+  .i_cmd                    (cmd                        ),/* PHY -> CMD: Command */
+  .i_cmd_arg                (cmd_arg                    ),/* PHY -> CMD: Command Arg */
 
-  .o_fbr3_csa_en            (o_fbr3_csa_en          ),
-  .o_fbr3_pwr_mode          (o_fbr3_pwr_mode        ),
-  .o_fbr3_block_size        (o_fbr3_block_size      ),
+  .i_chip_select_n          (chip_select_n              ),/* Chip Select used to determine if this is a SPI host */
 
-  .o_fbr4_csa_en            (o_fbr4_csa_en          ),
-  .o_fbr4_pwr_mode          (o_fbr4_pwr_mode        ),
-  .o_fbr4_block_size        (o_fbr4_block_size      ),
+  .o_rsps                   (rsps                       ),/* Response Generated by this layer*/
+  .o_rsps_len               (rsps_len                   ),/* Length of response*/
+  .o_rsps_stb               (rsps_stb                   ),
+  .o_rsps_fail              (rsps_fail                  )
+);
 
-  .o_fbr5_csa_en            (o_fbr5_csa_en          ),
-  .o_fbr5_pwr_mode          (o_fbr5_pwr_mode        ),
-  .o_fbr5_block_size        (o_fbr5_block_size      ),
+sdio_data_control data_bus_interconnect(
+  .rst                      (rst                        ),
+  .i_cmd_bus_sel            (cmd_bus_sel                ),  /* If this is high we can only read/write one byte */
+  .i_mem_sel                (o_mem_en                   ),  /* When high this selects the memory */
+  .i_func_sel               (o_func_num                 ),  /* Select the function number */
 
-  .o_fbr6_csa_en            (o_fbr6_csa_en          ),
-  .o_fbr6_pwr_mode          (o_fbr6_pwr_mode        ),
-  .o_fbr6_block_size        (o_fbr6_block_size      ),
+  //Command Bus Interface
+  .i_cmd_wr_stb             (cmd_func_write_stb         ),  /* CMD -> FUNC Write Data Strobe */
+  .i_cmd_wr_data            (cmd_func_write_data        ),  /* CMD -> FUNC: Write Data */
+  .o_cmd_rd_stb             (cmd_func_read_stb          ),  /* FUNC -> CMD: Strobbing Data */
+  .o_cmd_rd_data            (cmd_func_read_data         ),  /* FUNC -> CMD: Data from func to host */
+  .i_cmd_hst_rdy            (cmd_func_host_rdy          ),  /* CMD  -> FUNC: Ready for receive data */
+  .o_cmd_com_rdy            (cmd_func_data_rdy          ),  /* FUNC -> CMD: Function is ready for data */
 
-  .o_fbr7_csa_en            (o_fbr7_csa_en          ),
-  .o_fbr7_pwr_mode          (o_fbr7_pwr_mode        ),
-  .o_fbr7_block_size        (o_fbr7_block_size      ),
+  //Phy Data Bus Inteface
+  .i_data_phy_wr_stb        (data_phy_wr_stb            ),
+  .i_data_phy_wr_data       (data_phy_wr_data           ),
+  .o_data_phy_rd_stb        (data_phy_rd_stb            ),
+  .o_data_phy_rd_data       (data_phy_rd_data           ),
+  .i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
+  .o_data_phy_com_rdy       (data_phy_com_rdy           ),
 
-  .i_cmd_phy_idle           (cmd_phy_idle           ),/* PHY -> CMD: Command portion of phy layer is IDLE */
-  .i_cmd_stb                (cmd_stb                ),/* PHY -> CMD: Command signal strobe */
-  .i_cmd_crc_good_stb       (cmd_crc_good_stb       ),/* PHY -> CMD: CRC is good */
-  .i_cmd                    (cmd                    ),/* PHY -> CMD: Command */
-  .i_cmd_arg                (cmd_arg                ),/* PHY -> CMD: Command Arg */
+  //Function Interface
+  .o_cia_wr_stb             (cia_wr_stb                 ),
+  .o_cia_wr_data            (cia_wr_data                ),
+  .i_cia_rd_stb             (cia_rd_stb                 ),
+  .i_cia_rd_data            (cia_rd_data                ),
+  .o_cia_hst_rdy            (cia_hst_rdy                ),
+  .i_cia_com_rdy            (cia_com_rdy                ),
 
-  .i_chip_select_n          (chip_select_n          ),/* Chip Select used to determine if this is a SPI host */
+  //Function Interface
+  .o_func1_wr_stb           (o_func1_wr_stb             ),
+  .o_func1_wr_data          (o_func1_wr_data            ),
+  .i_func1_rd_stb           (i_func1_rd_stb             ),
+  .i_func1_rd_data          (i_func1_rd_data            ),
+  .o_func1_hst_rdy          (o_func1_hst_rdy            ),
+  .i_func1_com_rdy          (i_func1_com_rdy            ),
 
-  .o_rsps                   (rsps                   ),/* Response Generated by this layer*/
-  .o_rsps_len               (rsps_len               ),/* Length of response*/
-  .o_rsps_stb               (rsps_stb               )
+  //Function Interface
+  .o_func2_wr_stb           (o_func2_wr_stb             ),
+  .o_func2_wr_data          (o_func2_wr_data            ),
+  .i_func2_rd_stb           (i_func2_rd_stb             ),
+  .i_func2_rd_data          (i_func2_rd_data            ),
+  .o_func2_hst_rdy          (o_func2_hst_rdy            ),
+  .i_func2_com_rdy          (i_func2_com_rdy            ),
+
+  //Function Interface
+  .o_func3_wr_stb           (o_func3_wr_stb             ),
+  .o_func3_wr_data          (o_func3_wr_data            ),
+  .i_func3_rd_stb           (i_func3_rd_stb             ),
+  .i_func3_rd_data          (i_func3_rd_data            ),
+  .o_func3_hst_rdy          (o_func3_hst_rdy            ),
+  .i_func3_com_rdy          (i_func3_com_rdy            ),
+
+  //Function Interface
+  .o_func4_wr_stb           (o_func4_wr_stb             ),
+  .o_func4_wr_data          (o_func4_wr_data            ),
+  .i_func4_rd_stb           (i_func4_rd_stb             ),
+  .i_func4_rd_data          (i_func4_rd_data            ),
+  .o_func4_hst_rdy          (o_func4_hst_rdy            ),
+  .i_func4_com_rdy          (i_func4_com_rdy            ),
+
+  //Function Interface
+  .o_func5_wr_stb           (o_func5_wr_stb             ),
+  .o_func5_wr_data          (o_func5_wr_data            ),
+  .i_func5_rd_stb           (i_func5_rd_stb             ),
+  .i_func5_rd_data          (i_func5_rd_data            ),
+  .o_func5_hst_rdy          (o_func5_hst_rdy            ),
+  .i_func5_com_rdy          (i_func5_com_rdy            ),
+
+  //Function Interface
+  .o_func6_wr_stb           (o_func6_wr_stb             ),
+  .o_func6_wr_data          (o_func6_wr_data            ),
+  .i_func6_rd_stb           (i_func6_rd_stb             ),
+  .i_func6_rd_data          (i_func6_rd_data            ),
+  .o_func6_hst_rdy          (o_func6_hst_rdy            ),
+  .i_func6_com_rdy          (i_func6_com_rdy            ),
+
+  //Function Interface
+  .o_func7_wr_stb           (o_func7_wr_stb             ),
+  .o_func7_wr_data          (o_func7_wr_data            ),
+  .i_func7_rd_stb           (i_func7_rd_stb             ),
+  .i_func7_rd_data          (i_func7_rd_data            ),
+  .o_func7_hst_rdy          (o_func7_hst_rdy            ),
+  .i_func7_com_rdy          (i_func7_com_rdy            ),
+
+  //Memory Interface
+  .o_mem_wr_stb             (o_mem_wr_stb               ),
+  .o_mem_wr_data            (o_mem_wr_data              ),
+  .i_mem_rd_stb             (i_mem_rd_stb               ),
+  .i_mem_rd_data            (i_mem_rd_data              ),
+  .o_mem_hst_rdy            (o_mem_hst_rdy              ),
+  .i_mem_com_rdy            (i_mem_com_rdy              )
+
+);
+
+
+sdio_cia cia (
+  .clk                      (sdio_clk                   ),
+  .rst                      (rst                        ),
+
+  .i_activate               (o_func_activate            ),
+  .i_write_flag             (o_func_write_flag          ),
+  .i_address                (o_func_addr                ),
+  .i_inc_addr               (o_func_inc_addr            ),
+  .i_data_count             (o_func_data_count          ),
+
+  //SDIO Data Interface
+  .i_ready                  (cia_hst_rdy                ),
+  .o_finished               (cia_data_finished          ),
+
+  .i_data_stb               (cia_wr_stb                 ),
+  .i_data_in                (cia_wr_data                ),
+  .o_ready                  (cia_com_rdy                ),
+  .o_data_out               (cia_rd_data                ),
+  .o_data_stb               (cia_rd_stb                 ),
+
+  //FBR Interface
+  .o_fbr1_csa_en            (o_fbr1_csa_en              ),
+  .o_fbr1_pwr_mode          (o_fbr1_pwr_mode            ),
+  .o_fbr1_block_size        (o_fbr1_block_size          ),
+
+  .o_fbr2_csa_en            (o_fbr2_csa_en              ),
+  .o_fbr2_pwr_mode          (o_fbr2_pwr_mode            ),
+  .o_fbr2_block_size        (o_fbr2_block_size          ),
+
+  .o_fbr3_csa_en            (o_fbr3_csa_en              ),
+  .o_fbr3_pwr_mode          (o_fbr3_pwr_mode            ),
+  .o_fbr3_block_size        (o_fbr3_block_size          ),
+
+  .o_fbr4_csa_en            (o_fbr4_csa_en              ),
+  .o_fbr4_pwr_mode          (o_fbr4_pwr_mode            ),
+  .o_fbr4_block_size        (o_fbr4_block_size          ),
+
+  .o_fbr5_csa_en            (o_fbr5_csa_en              ),
+  .o_fbr5_pwr_mode          (o_fbr5_pwr_mode            ),
+  .o_fbr5_block_size        (o_fbr5_block_size          ),
+
+  .o_fbr6_csa_en            (o_fbr6_csa_en              ),
+  .o_fbr6_pwr_mode          (o_fbr6_pwr_mode            ),
+  .o_fbr6_block_size        (o_fbr6_block_size          ),
+
+  .o_fbr7_csa_en            (o_fbr7_csa_en              ),
+  .o_fbr7_pwr_mode          (o_fbr7_pwr_mode            ),
+  .o_fbr7_block_size        (o_fbr7_block_size          ),
+
+
+  //Function Configuration Interface
+  .o_func_enable            (o_func_enable              ),
+  .i_func_ready             (i_func_ready               ),
+  .o_func_int_enable        (o_func_int_enable          ),
+  .i_func_int_pending       (i_func_int_pending         ),
+  .i_func_ready_for_data    (i_func_ready_for_data      ),
+  .o_func_abort_stb         (o_func_abort_stb           ),
+  .o_func_select            (o_func_select              ),
+  .i_func_exec_status       (i_func_exec_status         ),
+
+  .i_func_active            (func_active                ),
+
+  //SDCard Configuration Interface
+  .o_en_card_detect_n       (en_card_detect_n           ),
+  .o_en_4bit_block_int      (en_4bit_block_int          ),
+  .o_bus_release_req_stb    (bus_release_req_stb        ),
+
+  .o_soft_reset             (soft_reset                 ),
+  .i_txrx_in_progress       (txrx_in_progress           ),
+
+  .o_max_f0_block_size      (max_f0_block_size          ),
+
+  .o_1_bit_mode             (cfg_1_bit_mode             ),
+  .o_4_bit_mode             (cfg_4_bit_mode             ),
+  .o_8_bit_mode             (cfg_8_bit_mode             ),
+
+  .o_sdr_12                 (sdr_12                     ),
+  .o_sdr_25                 (sdr_25                     ),
+  .o_sdr_50                 (sdr_50                     ),
+  .o_ddr_50                 (ddr_50                     ),
+  .o_sdr_104                (sdr_104                    ),
+
+  .o_driver_type_a          (driver_type_a              ),
+  .o_driver_type_b          (driver_type_b              ),
+  .o_driver_type_c          (driver_type_c              ),
+  .o_driver_type_d          (driver_type_d              ),
+  .o_enable_async_interrupt (enable_async_interrupt     )
 );
 
 sdio_device_phy phy(
-  .rst                      (rst                    ),
+  .rst                      (rst                        ),
 
   //Configuration
-  .i_spi_phy                  (spi_phy                ),/* Flag: SPI PHY (not supported now) */
-  .i_sd1_phy                  (sd1_phy                ),/* Flag: SD  PHY with one data lane */
-  .i_sd4_phy                  (sd4_phy                ),/* Flag: SD  PHY with four data lanes */
+  .i_spi_phy                (spi_phy                    ),/* Flag: SPI PHY (not supported now) */
+  .i_sd1_phy                (sd1_phy                    ),/* Flag: SD  PHY with one data lane */
+  .i_sd4_phy                (sd4_phy                    ),/* Flag: SD  PHY with four data lanes */
 
-  .o_cmd_phy_idle             (cmd_phy_idle           ),/* PHY -> CMD: Command portion of phy layer is IDLE */
+  .o_cmd_phy_idle           (cmd_phy_idle               ),/* PHY -> CMD: Command portion of phy layer is IDLE */
 
-  //Data Link Interface
-  .o_cmd_stb                  (cmd_stb                ),/* PHY -> CMD: Command signal strobe */
-  .o_cmd_crc_good_stb         (cmd_crc_good_stb       ),/* PHY -> CMD: CRC is good */
-  .o_cmd                      (cmd                    ),/* PHY -> CMD: Command */
-  .o_cmd_arg                  (cmd_arg                ),/* PHY -> CMD: Command Arg */
-  .i_rsps_stb                 (rsps_stb               ),/* CMD -> PHY: Response initiate */
-  .i_rsps                     (rsps                   ),/* CMD -> PHY: Response Value */
-  .i_rsps_len                 (rsps_len               ),/* CMD -> PHY: Response Length */
+  //Command Interface
+  .o_cmd_stb                (cmd_stb                    ),/* PHY -> CMD: Command signal strobe */
+  .o_cmd_crc_good_stb       (cmd_crc_good_stb           ),/* PHY -> CMD: CRC is good */
+  .o_cmd                    (cmd                        ),/* PHY -> CMD: Command */
+  .o_cmd_arg                (cmd_arg                    ),/* PHY -> CMD: Command Arg */
 
-  .i_interrupt                (interrupt              ),/* Interrupt */
-  .i_read_wait                (read_wait              ),/* SDIO Device is busy working on generated a read */
+  .i_rsps_stb               (rsps_stb                   ),/* CMD -> PHY: Response initiate */
+  .i_rsps                   (rsps                       ),/* CMD -> PHY: Response Value */
+  .i_rsps_len               (rsps_len                   ),/* CMD -> PHY: Response Length */
+  .i_rsps_fail              (rsps_fail                  ),/* CMD -> PHY: Response Failed */
+
+  .i_interrupt              (interrupt                  ),/* Interrupt */
+  .i_read_wait              (read_wait                  ),/* SDIO Device is busy working on generated a read */
+
+
+  //Data Interface
+  .o_data_wr_stb            (data_phy_wr_stb            ),
+  .o_data_wr_data           (data_phy_wr_data           ),
+  .i_data_rd_stb            (data_phy_rd_stb            ),
+  .i_data_rd_data           (data_phy_rd_data           ),
+  .o_data_hst_rdy           (data_hst_rdy               ),
+  .i_data_com_rdy           (data_com_rdy               ),
 
   //FPGA Interface
-  .i_sdio_clk                 (sdio_clk               ),
+  .i_sdio_clk               (sdio_clk                   ),
 
-  .o_sdio_cmd_dir             (o_sd_cmd_dir           ),
-  .i_sdio_cmd_in              (i_sd_cmd_in            ),
-  .o_sdio_cmd_out             (o_sd_cmd_out           ),
+  .o_sdio_cmd_dir           (o_sd_cmd_dir               ),
+  .i_sdio_cmd_in            (i_sd_cmd_in                ),
+  .o_sdio_cmd_out           (o_sd_cmd_out               ),
 
-  .o_sdio_data_dir            (o_sd_data_dir          ),
-  .i_sdio_data_in             (i_sd_data_in           ),
-  .o_sdio_data_out            (o_sd_data_out          )
+  .o_sdio_data_dir          (o_sd_data_dir              ),
+  .i_sdio_data_in           (i_sd_data_in               ),
+  .o_sdio_data_out          (o_sd_data_out              )
 
 );
 
@@ -269,6 +573,7 @@ assign  sdio_cmd      = sdio_cmd_dir  ? sdio_cmd_out  : sdio_cmd_in;
 assign  sdio_data     = sdio_data_dir ? sdio_data_out : sdio_data_in;
 assign  chip_select_n = sdio_data[3];
 */
+
 
 //synchronous logic
 

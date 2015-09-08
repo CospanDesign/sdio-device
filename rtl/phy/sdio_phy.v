@@ -27,6 +27,13 @@ module sdio_device_phy (
   //XXX: Need to hook this up
   input               i_read_wait,
 
+  output              o_data_wr_stb,
+  output      [7:0]   o_data_wr_data,
+  input               i_data_rd_stb,
+  input       [7:0]   i_data_rd_data,
+  output              o_data_hst_rdy,
+  input               i_data_com_rdy,
+
   //FPGA Interface
   input               i_sdio_clk,
 
@@ -108,8 +115,8 @@ always @ (posedge i_sdio_clk) begin
     //Incrementing bit count
     if (busy) begin
       bit_count         <=  bit_count + 1;
-    end                 
-    else begin          
+    end
+    else begin
       bit_count         <=  0;
     end
     case (state)
@@ -160,6 +167,9 @@ always @ (posedge i_sdio_clk) begin
           o_cmd_crc_good_stb    <=  1;
           crc_rst               <=  1;
         end
+
+
+        $display("CMD:Args %h:%h", o_cmd, o_cmd_arg);
         o_cmd_stb               <=  1;
         o_sdio_cmd_out          <=  1;
         o_sdio_cmd_dir          <=  1;
@@ -205,7 +215,7 @@ always @ (posedge i_sdio_clk) begin
         state                   <=  IDLE;
       end
     endcase
-    
+
     if (i_rsps_fail) begin
       //Do not respond when we detect a fail
       state                     <=  IDLE;

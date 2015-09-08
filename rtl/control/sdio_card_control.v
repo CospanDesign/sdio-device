@@ -39,92 +39,39 @@ SOFTWARE.
  *  - How to implement busy??
  */
 
-`include "sdio_cia_defines.v"
+//`include "sdio_cia_defines.v"
 
-module sdio_card_control(
+module sdio_card_control (
+
   input                     sdio_clk,
   input                     rst,
+  input                     i_soft_reset,
 
+  //SD Flash Interface
+  output                    o_mem_en,
   //Function Interface
+  output  reg   [3:0]       o_func_num,
   output  reg               o_func_activate,
   input                     i_func_finished,
   output  reg               o_func_inc_addr,
   output  reg               o_func_block_mode,
 
-  output  reg   [3:0]       o_func_num,
   output  reg               o_func_write_flag,      /* Read = 0, Write = 1 */
   output  reg               o_func_rd_after_wr,
   output  reg   [17:0]      o_func_addr,
-  output  reg   [7:0]       o_func_write_data,
-  input         [7:0]       i_func_read_data,
-  input                     i_func_data_rdy,
-  output                    o_func_host_rdy,
-  output  reg   [17:0]      o_func_data_count,
+  output  reg   [9:0]       o_func_data_count,
+
+  //Command Data Bus
+  output  reg               o_cmd_bus_sel,
+  output  reg   [7:0]       o_cmd_func_write_data,
+  output  reg               o_cmd_func_write_stb,
+  input                     i_cmd_func_read_stb,
+  input         [7:0]       i_cmd_func_read_data,
+  input                     i_cmd_func_data_rdy,
+  output  reg               o_cmd_func_host_rdy,
 
   // tunning block
   output  reg               o_tunning_block,
-
-  // Function Interface From CIA
-  output                    o_fbr1_csa_en,
-  output        [3:0]       o_fbr1_pwr_mode,
-  output        [15:0]      o_fbr1_block_size,
-
-  output                    o_fbr2_csa_en,
-  output        [3:0]       o_fbr2_pwr_mode,
-  output        [15:0]      o_fbr2_block_size,
-
-  output                    o_fbr3_csa_en,
-  output        [3:0]       o_fbr3_pwr_mode,
-  output        [15:0]      o_fbr3_block_size,
-
-  output                    o_fbr4_csa_en,
-  output        [3:0]       o_fbr4_pwr_mode,
-  output        [15:0]      o_fbr4_block_size,
-
-  output                    o_fbr5_csa_en,
-  output        [3:0]       o_fbr5_pwr_mode,
-  output        [15:0]      o_fbr5_block_size,
-
-  output                    o_fbr6_csa_en,
-  output        [3:0]       o_fbr6_pwr_mode,
-  output        [15:0]      o_fbr6_block_size,
-
-  output                    o_fbr7_csa_en,
-  output        [3:0]       o_fbr7_pwr_mode,
-  output        [15:0]      o_fbr7_block_size,
-
-
-  output        [7:0]       o_func_enable,
-  input         [7:0]       i_func_ready,
-  output        [7:0]       o_func_int_enable,
-  input         [7:0]       i_func_int_pending,
-  input         [7:0]       i_func_ready_for_data,
-  output        [2:0]       o_func_abort_stb,
-  output        [3:0]       o_func_select,
-  input         [7:0]       i_func_exec_status,
-
-  output                    o_soft_reset,
-  output                    o_en_card_detect_n,
-  output                    o_en_4bit_block_int,
-  input                     i_func_active,
-  output                    o_bus_release_req_stb,
-  output        [15:0]      o_max_f0_block_size,
-
-  output                    o_1_bit_mode,
-  output                    o_4_bit_mode,
-  output                    o_8_bit_mode,
-
-  output                    o_sdr_12,
-  output                    o_sdr_25,
-  output                    o_sdr_50,
-  output                    o_ddr_50,
-  output                    o_sdr_104,
-
-  output                    o_driver_type_a,
-  output                    o_driver_type_b,
-  output                    o_driver_type_c,
-  output                    o_driver_type_d,
-  output                    o_enable_async_interrupt,
 
   //PHY Interface
   input                     i_cmd_stb,
@@ -138,18 +85,9 @@ module sdio_card_control(
   output  reg               o_rsps_stb,
   output        [39:0]      o_rsps,
   output        [7:0]       o_rsps_len,
-
-
-  //PHY Data Interface
-  input                     i_phy_data_ready,
-  input                     i_phy_data_data_stb,
-  input         [7:0]       i_phy_data_data_in,
-  output                    o_phy_data_ready,
-  output        [7:0]       o_phy_data_data_out,
-  output                    o_phy_data_data_stb,
-  output                    o_phy_data_finished
-
+  output  reg               o_rsps_fail
 );
+
 //local parameters
 localparam      NORMAL_RESPONSE     = 1'b0;
 localparam      EXTENDED_RESPONSE   = 1'b1;
@@ -161,11 +99,13 @@ localparam      COMMAND             = 4'h3;
 localparam      TRANSFER            = 4'h4;
 localparam      INACTIVE            = 4'h5;
 
-localparam      R1                  = 4'h0;
-localparam      R4                  = 4'h1;
-localparam      R5                  = 4'h2;
-localparam      R6                  = 4'h3;
-localparam      R7                  = 4'h4;
+localparam      R1                  = 4'h1;
+localparam      R2                  = 4'h2;
+localparam      R3                  = 4'h3;
+localparam      R4                  = 4'h4;
+localparam      R5                  = 4'h5;
+localparam      R6                  = 4'h6;
+localparam      R7                  = 4'h7;
 
 //registes/wires
 reg             [3:0]       state;
@@ -174,10 +114,8 @@ reg             [47:0]      response_value;
 //reg             [136:0]     response_value_extended;
 reg                         response_type;
 reg             [15:0]      register_card_address;  /* Host can set this so later it can be used to identify this card */
-reg             [3:0]       voltage_select;
+reg             [23:0]      voltage_select;
 reg                         v1p8_sel;
-reg             [23:0]      vio_ocr;
-reg                         busy;
 
 reg                         bad_crc;
 reg                         cmd_arg_out_of_range;
@@ -194,6 +132,10 @@ wire                        data_txrx_in_progress_flag;
 reg             [3:0]       component_select;
 reg                         rsps_stb;
 
+reg                         direct_read_write;  //Read/Write using command channel
+reg             [17:0]      data_count;
+reg             [7:0]       cmd_data;
+
 
 
 /*
@@ -209,136 +151,23 @@ reg                         rsps_stb;
  *  CCCR
  */
 
-//Function to Controller
-wire  [7:0]                 fc_ready;         //(Bitmask) Function is ready to receive data
-
-//Controller to Function
-wire  [7:0]                 fc_activate;      //(Bitmask) Activate a function transaction
-wire                        cf_ready;         //Controller is ready to receive data
-wire                        cf_write_flag;    //This is a write transaction
-wire                        cf_inc_addr_flag; //Increment the Address
-wire  [17:0]                cf_address;       //Offset Removed, this will enable modular function
-
-wire                        cia_activate;
-
-wire                        cia_phy_i_data_ready;
-wire                        cia_phy_i_data_stb;
-wire  [7:0]                 cia_phy_i_data_in;
-wire                        cia_phy_o_ready;
-wire  [7:0]                 cia_phy_o_data_out;
-wire                        cia_phy_o_data_stb;
-wire                        cia_phy_o_finished;
-
-
-//submodules
-sdio_cia cia (
-  .clk                         (sdio_clk                    ),
-  .rst                         (rst                         ),
-
-  //CIA Function
-  .i_activate                  (cia_activate                ),
-  .i_write_flag                (o_func_write_flag           ),
-  .i_address                   (o_func_addr                 ),
-  .i_inc_addr                  (o_func_inc_addr             ),
-  .i_data_count                (o_func_data_count           ),
-
-  //SDIO Data Interface
-  .i_ready                     (cia_phy_i_data_ready        ),
-  .i_data_stb                  (cia_phy_i_data_stb          ),
-  .i_data_in                   (cia_phy_i_data_in           ),
-  .o_ready                     (cia_phy_o_ready             ),
-  .o_data_out                  (cia_phy_o_data_out          ),
-  .o_data_stb                  (cia_phy_o_data_stb          ),
-  .o_finished                  (cia_phy_o_finished          ),
-
-  //FBR Interface
-  .o_fbr1_csa_en               (o_fbr1_csa_en               ),
-  .o_fbr1_pwr_mode             (o_fbr1_pwr_mode             ),
-  .o_fbr1_block_size           (o_fbr1_block_size           ),
-
-  .o_fbr2_csa_en               (o_fbr2_csa_en               ),
-  .o_fbr2_pwr_mode             (o_fbr2_pwr_mode             ),
-  .o_fbr2_block_size           (o_fbr2_block_size           ),
-
-  .o_fbr3_csa_en               (o_fbr3_csa_en               ),
-  .o_fbr3_pwr_mode             (o_fbr3_pwr_mode             ),
-  .o_fbr3_block_size           (o_fbr3_block_size           ),
-
-  .o_fbr4_csa_en               (o_fbr4_csa_en               ),
-  .o_fbr4_pwr_mode             (o_fbr4_pwr_mode             ),
-  .o_fbr4_block_size           (o_fbr4_block_size           ),
-
-  .o_fbr5_csa_en               (o_fbr5_csa_en               ),
-  .o_fbr5_pwr_mode             (o_fbr5_pwr_mode             ),
-  .o_fbr5_block_size           (o_fbr5_block_size           ),
-
-  .o_fbr6_csa_en               (o_fbr6_csa_en               ),
-  .o_fbr6_pwr_mode             (o_fbr6_pwr_mode             ),
-  .o_fbr6_block_size           (o_fbr6_block_size           ),
-
-  .o_fbr7_csa_en               (o_fbr7_csa_en               ),
-  .o_fbr7_pwr_mode             (o_fbr7_pwr_mode             ),
-  .o_fbr7_block_size           (o_fbr7_block_size           ),
-
-
-  //Function Configuration Interface
-  .o_func_enable               (o_func_enable               ),
-  .i_func_ready                (i_func_ready                ),
-  .o_func_int_enable           (o_func_int_enable           ),
-  .i_func_int_pending          (i_func_int_pending          ),
-  .i_func_ready_for_data       (i_func_ready_for_data       ),
-  .o_func_abort_stb            (o_func_abort_stb            ),
-  .o_func_select               (o_func_select               ),
-  .i_func_exec_status          (i_func_exec_status          ),
-
-  //SDCard Configuration Interface
-  .o_en_card_detect_n          (o_en_card_detect_n          ),
-  .o_en_4bit_block_int         (o_en_4bit_block_int         ),
-  .i_func_active               (i_func_active               ),
-  .o_bus_release_req_stb       (o_bus_release_req_stb       ),
-
-  .o_soft_reset                (o_soft_reset                ),
-  .i_data_txrx_in_progress_flag(data_txrx_in_progress_flag  ),
-
-  .o_max_f0_block_size         (max_f0_block_size           ),
-
-  .o_1_bit_mode                (o_1_bit_mode                ),
-  .o_4_bit_mode                (o_4_bit_mode                ),
-  .o_8_bit_mode                (o_8_bit_mode                ),
-
-  .o_sdr_12                    (o_sdr_12                    ),
-  .o_sdr_25                    (o_sdr_25                    ),
-  .o_sdr_50                    (o_sdr_50                    ),
-  .o_ddr_50                    (o_ddr_50                    ),
-  .o_sdr_104                   (o_sdr_104                   ),
-
-  .o_driver_type_a             (o_driver_type_a             ),
-  .o_driver_type_b             (o_driver_type_b             ),
-  .o_driver_type_c             (o_driver_type_c             ),
-  .o_driver_type_d             (o_driver_type_d             ),
-  .o_enable_async_interrupt    (enable_async_interrupt      )
-);
-
-
 //asynchronous logic
-//assign  o_rsps[47]   = 1'b0; //Start bit
-//assign  o_rsps[46]   = 1'b0; //Direction bit (to the host)
-//assign  o_rsps[133:0] = response_type ? response_value_extended[133:0] : {response_value[45:0], 87'h0};
-assign  o_rsps        = response_value[47:8];
-//assign  o_rsps_len    = response_type ? 128 : 40;
-assign  o_rsps_len    = 40;
+assign  o_rsps      = response_value[47:8];
+assign  o_rsps_len  = 40;
 
-assign  r5_cmd        = (state == RESET) || (state == INITIALIZE) || (state == STANDBY) || (state == INACTIVE) ? 2'b00 :
-                        (state == COMMAND)                                                                     ? 2'b01 :
-                        (state == TRANSFER)                                                                    ? 2'b10 :
-                                                                                                                 2'b11;
+assign  r5_cmd      = (state == RESET) || (state == INITIALIZE) || (state == STANDBY) || (state == INACTIVE) ? 2'b00 :
+                      (state == COMMAND)                                                                     ? 2'b01 :
+                      (state == TRANSFER)                                                                    ? 2'b10 :
+                                                                                                               2'b11;
 
-assign  o_func_host_rdy = i_cmd_phy_idle; /* Can only send data when i_cmd phy is not sending data */
+//assign  o_cmd_func_host_rdy = i_cmd_phy_idle; /* Can only send data when i_cmd phy is not sending data */
 assign  cia_activate  = (o_func_num == 0);
+assign  o_mem_en      = 1'b0;
 
 //synchronous logic
 always @ (posedge sdio_clk) begin
   o_rsps_stb                <=  0;
+  o_rsps_fail               <=  0;
   if (rst) begin
     response_type           <=  NORMAL_RESPONSE;
     response_value          <=  48'h00000000;
@@ -347,61 +176,63 @@ always @ (posedge sdio_clk) begin
   else if (rsps_stb) begin
     //Strobe
     //Process Command
-    o_rsps_stb                                                            <=  1;
+    o_rsps_stb                                <=  1;
     case (response_index)
       R1: begin
         //R1
-        response_type                                                     <=  NORMAL_RESPONSE;
-        response_value                                                    <=  48'h0;
-        response_value[`CMD_RSP_CMD]                                      <=  i_cmd;
-        response_value[`R1_OUT_OF_RANGE]                                  <=  cmd_arg_out_of_range;
-        response_value[`R1_COM_CRC_ERROR]                                 <=  bad_crc;
-        response_value[`R1_ILLEGAL_COMMAND]                               <=  illegal_command;
-        response_value[`R1_ERROR]                                         <=  card_error;
-        response_value[`R1_CURRENT_STATE]                                 <=  4'hF;
+        response_type                         <=  NORMAL_RESPONSE;
+        response_value                        <=  48'h0;
+        response_value[`CMD_RSP_CMD]          <=  i_cmd;
+        response_value[`R1_OUT_OF_RANGE]      <=  cmd_arg_out_of_range;
+        response_value[`R1_COM_CRC_ERROR]     <=  bad_crc;
+        response_value[`R1_ILLEGAL_COMMAND]   <=  illegal_command;
+        response_value[`R1_ERROR]             <=  card_error;
+        response_value[`R1_CURRENT_STATE]     <=  4'hF;
       end
       R4: begin
         //R4:
-        response_type                                                     <=  NORMAL_RESPONSE;
-        response_value                                                    <=  48'h0;
-        response_value[`R4_RSRVD]                                         <=  6'h3F;
-        response_value[`R4_READY]                                         <=  1'b1;
-        response_value[`R4_NUM_FUNCS]                                     <=  `NUM_FUNCS;
-        response_value[`R4_MEM_PRESENT]                                   <=  `MEM_PRESENT;
-        response_value[`R4_UHSII_AVAILABLE]                               <=  `UHSII_AVAILABLE;
-        response_value[`R4_IO_OCR]                                        <=  `OCR_VALUE;
-        response_value[15:8]                                              <=  8'h00;
+        response_type                         <=  NORMAL_RESPONSE;
+        response_value                        <=  48'h0;
+        response_value[`R4_RSRVD]             <=  6'h3F;
+        response_value[`R4_READY]             <=  1'b1;
+        response_value[`R4_NUM_FUNCS]         <=  `NUM_FUNCS;
+        response_value[`R4_MEM_PRESENT]       <=  `MEM_PRESENT;
+        response_value[`R4_UHSII_AVAILABLE]   <=  `UHSII_AVAILABLE;
+        response_value[`R4_S18A]              <=  v1p8_sel;
+        response_value[`R4_IO_OCR]            <=  voltage_select;
+        //response_value[7:0]                   <=  8'h00;
       end
       R5: begin
         //R5:
-        response_type                                                     <=  NORMAL_RESPONSE;
-        response_value                                                    <=  48'h0;
-        response_value[`CMD_RSP_CMD]                                      <=  i_cmd;
-        response_value[`R5_FLAG_CRC_ERROR]                                <=  bad_crc;
-        response_value[`R5_INVALID_CMD]                                   <=  illegal_command;
-        response_value[`R5_FLAG_CURR_STATE]                               <=  r5_cmd;
-        response_value[`R5_FLAG_ERROR]                                    <=  card_error;
+        response_type                         <=  NORMAL_RESPONSE;
+        response_value                        <=  48'h0;
+        response_value[`CMD_RSP_CMD]          <=  i_cmd;
+        response_value[`R5_FLAG_CRC_ERROR]    <=  bad_crc;
+        response_value[`R5_INVALID_CMD]       <=  illegal_command;
+        response_value[`R5_FLAG_CURR_STATE]   <=  r5_cmd;
+        response_value[`R5_FLAG_ERROR]        <=  card_error;
+        response_value[`R5_DATA]              <=  cmd_data;
       end
       R6: begin
         //R6: Relative address response
-        response_type                                                     <=  NORMAL_RESPONSE;
-        response_value                                                    <=  48'h0;
-        response_value[`CMD_RSP_CMD]                                      <=  i_cmd;
-        response_value[`R6_REL_ADDR]                                      <=  register_card_address;
-        response_value[`R6_STS_CRC_COMM_ERR]                              <=  bad_crc;
-        response_value[`R6_STS_ILLEGAL_CMD]                               <=  illegal_command;
-        response_value[`R6_STS_ERROR]                                     <=  card_error;
+        response_type                         <=  NORMAL_RESPONSE;
+        response_value                        <=  48'h0;
+        response_value[`CMD_RSP_CMD]          <=  i_cmd;
+        response_value[`R6_REL_ADDR]          <=  register_card_address;
+        response_value[`R6_STS_CRC_COMM_ERR]  <=  bad_crc;
+        response_value[`R6_STS_ILLEGAL_CMD]   <=  illegal_command;
+        response_value[`R6_STS_ERROR]         <=  card_error;
       end
       R7: begin
         //R7
-        response_type                                                     <=  NORMAL_RESPONSE;
-        response_value                                                    <=  48'h0;
-        response_value[`CMD_RSP_CMD]                                      <=  i_cmd;
-        response_value[`R7_VHS]                                           <=  i_cmd_arg[`CMD5_ARG_VHS] & `VHS_DEFAULT_VALUE;
-        response_value[`R7_PATTERN]                                       <=  i_cmd_arg[`CMD8_ARG_PATTERN];
+        response_type                         <=  NORMAL_RESPONSE;
+        response_value                        <=  48'h0;
+        response_value[`CMD_RSP_CMD]          <=  i_cmd;
+        response_value[`R7_VHS]               <=  i_cmd_arg[`CMD8_ARG_VHS];
+        response_value[`R7_PATTERN]           <=  i_cmd_arg[`CMD8_ARG_PATTERN];
       end
       default: begin
-        response_value                                                    <=  48'h0;
+        response_value                        <=  48'h0;
       end
     endcase
   end
@@ -411,13 +242,13 @@ always @ (posedge sdio_clk) begin
   //Deassert Strobes
   rsps_stb                          <=  0;
   o_func_activate                   <=  0;
+  o_cmd_func_write_stb              <=  0;
 
-  if (rst || o_soft_reset) begin
+  if (rst || i_soft_reset) begin
     state                           <=  INITIALIZE;
     register_card_address           <=  16'h0001;       // Initializes the RCA to 0
-    voltage_select                  <=  `VHS_DEFAULT_VALUE;
+    voltage_select                  <=  `OCR_VALUE;
     v1p8_sel                        <=  0;
-    vio_ocr                         <=  24'hFFFF00;
 
     bad_crc                         <=  0;
     cmd_arg_out_of_range            <=  0;
@@ -430,147 +261,205 @@ always @ (posedge sdio_clk) begin
     o_func_write_flag               <=  0;              /* Read Write Flag R = 0, W = 1 */
     o_func_rd_after_wr              <=  0;
     o_func_addr                     <=  18'h0;
-    o_func_write_data               <=  8'h00;
+    o_cmd_func_write_data           <=  8'h00;
     o_func_data_count               <=  8'h00;
-    busy                            <=  0;
+    data_count                      <=  0;
 
     response_index                  <=  0;
     o_tunning_block                 <=  0;
-    o_func_data_count               <=  0;
+    o_cmd_func_host_rdy             <=  0;
+    cmd_data                        <=  0;
+    o_cmd_bus_sel                   <=  1;
 
   end
   else if (i_cmd_stb && !i_cmd_crc_good_stb) begin
     bad_crc                         <=  1;
+    o_rsps_fail                     <=  1;
     //Do not send a response
   end
-  else if (i_cmd_stb) begin
-    //Strobe
+  else    //Strobe
+    if (rsps_stb) begin
+      //Whenever a response is successful de-assert any of the errors, they will have been picked up by the response
+      bad_crc                         <=  0;
+      cmd_arg_out_of_range            <=  0;
+      illegal_command                 <=  0;
+      card_error                      <=  0;  //Unknown Error
+    end
     //Card Bootup Sequence
     case (state)
       RESET: begin
-        state                       <= INITIALIZE;
+        o_cmd_func_host_rdy           <= 0;
+        state                         <= INITIALIZE;
+        o_cmd_bus_sel                 <= 1;
       end
       INITIALIZE: begin
-        $display ("Strobe!");
-        case (i_cmd)
-          `SD_CMD_IO_SEND_OP_CMD: begin
-            response_index          <=  R4;
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_SEND_RELATIVE_ADDR: begin
-            state                   <=  STANDBY;
-            response_index          <=  R6;
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_GO_INACTIVE_STATE: begin
-            state                   <=  INACTIVE;
-          end
-          default: begin
-            illegal_command         <=  1;
-          end
-        endcase
+        o_cmd_func_host_rdy           <= 0;
+        o_cmd_bus_sel                 <= 1;
+        if (i_cmd_stb) begin
+          //$display ("Strobe!");
+          case (i_cmd)
+            `SD_CMD_IO_SEND_OP_CMD: begin
+              v1p8_sel                <=  i_cmd_arg[`CMD5_ARG_S18R];
+              voltage_select          <=  i_cmd_arg[`CMD5_ARG_OCR] & `OCR_VALUE;
+              response_index          <=  R4;
+              rsps_stb                <=  1;
+            end
+            `SD_CMD_SEND_RELATIVE_ADDR: begin
+              state                   <=  STANDBY;
+              response_index          <=  R6;
+              //TODO: Possibly change the relative card address (RCA)
+              rsps_stb                <=  1;
+            end
+            `SD_CMD_GO_INACTIVE_STATE: begin
+              state                   <=  INACTIVE;
+            end
+            default: begin
+              illegal_command         <=  1;
+              o_rsps_fail             <=  1;
+            end
+          endcase
+        end
       end
       STANDBY: begin
-        case (i_cmd)
-          `SD_CMD_SEND_RELATIVE_ADDR: begin
-            state                   <=  STANDBY;
-            response_index          <=  R6;
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_SEL_DESEL_CARD: begin
-            if (register_card_address == i_cmd_arg[15:0]) begin
-              state                 <= COMMAND;
+        o_cmd_func_host_rdy           <= 0;
+        o_cmd_bus_sel                 <= 1;
+        if (i_cmd_stb) begin
+          case (i_cmd)
+            `SD_CMD_SEND_RELATIVE_ADDR: begin
+              state                   <=  STANDBY;
+              response_index          <=  R6;
+              rsps_stb                <=  1;
             end
-            response_index          <=  R1;
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_GO_INACTIVE_STATE: begin
-            state                   <=  INACTIVE;
-          end
-          default: begin
-            illegal_command         <=  1;
-          end
-        endcase
+            `SD_CMD_SEL_DESEL_CARD: begin
+              response_index          <=  R1;
+              if (register_card_address == i_cmd_arg[`CMD7_RCA]) begin
+                state                 <= COMMAND;
+                rsps_stb              <=  1;
+              end
+              else begin
+                o_rsps_fail           <=  1;
+              end
+            end
+            `SD_CMD_GO_INACTIVE_STATE: begin
+              state                   <=  INACTIVE;
+            end
+            default: begin
+              illegal_command         <=  1;
+              o_rsps_fail             <=  1;
+            end
+          endcase
+        end
       end
       COMMAND: begin
-        case (i_cmd)
-          `SD_CMD_IO_RW_DIRECT: begin
-            o_func_write_flag       <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
-            o_func_rd_after_wr      <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
-            o_func_num              <= i_cmd_arg[`CMD52_ARG_FNUM    ];
-            o_func_addr             <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
-            o_func_write_data       <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
-            o_func_inc_addr         <= 0;
-            o_func_data_count       <= 1;
-            o_func_activate         <= 1;
-            busy                    <= 1;
-            rsps_stb                <= 1;
-            state                   <= TRANSFER;
-          end
-          `SD_CMD_IO_RW_EXTENDED: begin
-            o_func_write_flag       <= i_cmd_arg[`CMD53_ARG_RW_FLAG   ];
-            o_func_rd_after_wr      <= 0;
-            o_func_num              <= i_cmd_arg[`CMD53_ARG_FNUM      ];
-            o_func_addr             <= i_cmd_arg[`CMD53_ARG_REG_ADDR  ];
-            o_func_data_count       <= i_cmd_arg[`CMD53_ARG_DATA_COUNT];
-            o_func_block_mode       <= i_cmd_arg[`CMD53_ARG_BLOCK_MODE];
-            o_func_inc_addr         <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
-            o_func_activate         <= 1;
-            busy                    <= 1;
-            rsps_stb                <= 1;
-            state                   <= TRANSFER;
-          end
-          `SD_CMD_SEL_DESEL_CARD: begin
-            if (register_card_address != i_cmd_arg[15:0]) begin
-              state                 <= STANDBY;
+        o_cmd_func_host_rdy           <= 0;
+        o_cmd_bus_sel                 <= 1;
+        if (i_cmd_stb) begin
+          direct_read_write           <= 0;
+          case (i_cmd)
+            `SD_CMD_IO_RW_DIRECT: begin
+              o_func_write_flag       <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
+              o_func_rd_after_wr      <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
+              o_func_num              <= i_cmd_arg[`CMD52_ARG_FNUM    ];
+              o_func_addr             <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
+              o_cmd_func_write_data   <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
+              o_func_inc_addr         <= 0;
+              o_func_data_count       <= 1;
+              o_func_activate         <= 1;
+              rsps_stb                <= 1;
+              state                   <= TRANSFER;
+              direct_read_write       <= 1;
+              response_index          <= R5;
+              cmd_data                <=  0;
             end
-            response_index          <=  R1;
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_SEND_TUNNING_BLOCK: begin
-            response_index          <=  R1;
-            rsps_stb                <=  1;
-            o_tunning_block         <=  1;
-          end
-          `SD_CMD_IO_RW_DIRECT: begin
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_IO_RW_EXTENDED: begin
-            response_index          <=  R5;
-            state                   <=  TRANSFER;
-            rsps_stb                <=  1;
-          end
-          `SD_CMD_GO_INACTIVE_STATE: begin
-            state                   <=  INACTIVE;
-          end
-          default: begin
-            illegal_command         <=  1;
-          end
-        endcase
+            `SD_CMD_IO_RW_EXTENDED: begin
+              o_func_write_flag       <= i_cmd_arg[`CMD53_ARG_RW_FLAG   ];
+              o_func_rd_after_wr      <= 0;
+              o_func_num              <= i_cmd_arg[`CMD53_ARG_FNUM      ];
+              o_func_addr             <= i_cmd_arg[`CMD53_ARG_REG_ADDR  ];
+              o_func_data_count       <= i_cmd_arg[`CMD53_ARG_DATA_COUNT];
+              o_func_block_mode       <= i_cmd_arg[`CMD53_ARG_BLOCK_MODE];
+              o_func_inc_addr         <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
+              o_func_activate         <= 1;
+              rsps_stb                <= 1;
+              state                   <= TRANSFER;
+              response_index          <=  R5;
+              o_cmd_bus_sel           <=  0;
+            end
+            `SD_CMD_SEL_DESEL_CARD: begin
+              if (register_card_address != i_cmd_arg[`CMD7_RCA]) begin
+                state                 <= STANDBY;
+              end
+              response_index          <= R1;
+              rsps_stb                <= 1;
+            end
+            `SD_CMD_SEND_TUNNING_BLOCK: begin
+              response_index          <= R1;
+              rsps_stb                <= 1;
+              o_tunning_block         <= 1;
+            end
+            `SD_CMD_GO_INACTIVE_STATE: begin
+              state                   <= INACTIVE;
+            end
+            default: begin
+              illegal_command         <= 1;
+              o_rsps_fail             <= 1;
+            end
+          endcase
+        end
       end
       TRANSFER: begin
-        if (i_func_finished) begin
-          state                     <=  COMMAND;
+        //Data Transaction
+        if (direct_read_write) begin
+          o_cmd_func_host_rdy       <= 1;
+          if (data_count < o_func_data_count) begin
+            if (o_func_write_flag) begin
+              //Writing
+              if (i_cmd_func_data_rdy) begin
+                o_cmd_func_write_stb<= 1;
+                data_count          <= data_count + 1;
+              end
+              cmd_data              <= 0;
+            end
+            else begin
+              //Reading
+              if (i_cmd_func_read_stb) begin
+                cmd_data            <= i_cmd_func_read_data;
+                data_count          <= data_count + 1;
+              end
+            end
+          end
         end
-        case (i_cmd)
-          `SD_CMD_IO_RW_DIRECT: begin
-            o_func_write_flag       <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
-            o_func_rd_after_wr      <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
-            o_func_num              <= i_cmd_arg[`CMD52_ARG_FNUM    ];
-            o_func_addr             <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
-            o_func_write_data       <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
-            o_func_activate         <= 1;
-            busy                    <= 1;
-            rsps_stb                <= 1;
-            o_func_data_count       <= 1;
-          end
-          default: begin
-            illegal_command         <=  1;
-          end
-        endcase
+
+        if (i_func_finished) begin
+          o_func_activate             <= 0;
+          state                       <= COMMAND;
+        end
+
+        if (i_cmd_stb) begin
+          case (i_cmd)
+            `SD_CMD_IO_RW_DIRECT: begin
+              $display("Direct Read/Write");
+              o_func_write_flag       <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
+              o_func_rd_after_wr      <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
+              o_func_num              <= i_cmd_arg[`CMD52_ARG_FNUM    ];
+              o_func_addr             <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
+              o_cmd_func_write_data   <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
+              o_func_activate         <= 1;
+              rsps_stb                <= 1;
+              o_func_data_count       <= 1;
+              cmd_data                <= 0;
+            end
+            default: begin
+              illegal_command         <= 1;
+              o_rsps_fail             <= 1;
+            end
+          endcase
+        end
       end
       INACTIVE: begin
         //Nothing Going on here
+        o_cmd_func_host_rdy           <= 0;
+        o_rsps_fail                   <= 1;
       end
       default: begin
       end
@@ -582,31 +471,29 @@ always @ (posedge sdio_clk) begin
       case (i_cmd)
         `SD_CMD_GO_IDLE_STATE: begin
           $display ("Initialize SD or SPI Mode, SPI MODE NOT SUPPORTED NOW!!");
+          o_rsps_fail               <=  0;
           illegal_command           <=  0;
           response_index            <=  R1;
           if (!i_chip_select_n) begin
-            //We are in SD Mode
-            rsps_stb                <=  1;
+            //XXX: SPI MODE IS NOT SUPPORTED YET!!!
           end
           else begin
-            //XXX: SPI MODE IS NOT SUPPORTED YET!!!
+            //We are in SD Mode
+            rsps_stb                <=  1;
           end
         end
         `SD_CMD_SEND_IF_COND: begin
           $display ("Send Interface Condition");
+          o_rsps_fail               <=  0;
           illegal_command           <=  0;
           response_index            <=  R7;
-          /*XXX Check if this should IO_OCR */
-          if (i_cmd_arg[`CMD5_ARG_VHS] & `VHS_DEFAULT_VALUE) begin
-            v1p8_sel                <=  i_cmd_arg[`CMD5_ARG_S18R];
-            vio_ocr                 <=  i_cmd_arg[`CMD5_ARG_VHS ];
-            if (i_cmd_arg[`CMD5_ARG_VHS] & `VHS_DEFAULT_VALUE)
-              voltage_select        <=  i_cmd_arg[`CMD5_ARG_VHS ] & `VHS_DEFAULT_VALUE;
+          if (i_cmd_arg[`CMD8_ARG_VHS] == `VHS_DEFAULT_VALUE) begin
             rsps_stb                <=  1;
           end
         end
         `SD_CMD_VOLTAGE_SWITCH: begin
           $display ("Voltage Mode Switch");
+          o_rsps_fail               <=  0;
           illegal_command           <=  0;
           response_index            <=  R1;
           rsps_stb                  <=  1;
@@ -614,17 +501,6 @@ always @ (posedge sdio_clk) begin
         default: begin
         end
       endcase
-    end
-  end
-  else if (rsps_stb) begin
-    //Whenever a response is successful de-assert any of the errors, they will have been picked up by the response
-    bad_crc                         <=  0;
-    cmd_arg_out_of_range            <=  0;
-    illegal_command                 <=  0;
-    card_error                      <=  0;  //Unknown Error
-  end
-  else if (o_phy_data_finished) begin
-    busy                            <=  0;
   end
 end
 

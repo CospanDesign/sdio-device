@@ -42,16 +42,16 @@ module sdio_cia (
 
   input                     i_activate,
   input                     i_ready,
-  output                    o_ready,
-  output                    o_finished,
+  output  reg               o_ready,
+  output  reg               o_finished,
   input                     i_write_flag,
   input                     i_inc_addr,
   input         [17:0]      i_address,
   input                     i_data_stb,
-  input         [17:0]      i_data_count,
+  input         [9:0]       i_data_count,
   input         [7:0]       i_data_in,
   output        [7:0]       o_data_out,
-  output                    o_data_stb,  //If reading, this strobes a new piece of data in, if writing strobes data out
+  output  reg               o_data_stb,  //If reading, this strobes a new piece of data in, if writing strobes data out
 
   //FBR Interface
 
@@ -93,7 +93,7 @@ module sdio_cia (
   output                    o_fbr_addr_in,
   output        [17:0]      o_fbr_address,
   output                    o_fbr_data_stb,
-  output        [17:0]      o_fbr_data_count,
+  output        [9:0]       o_fbr_data_count,
   output        [7:0]       o_fbr_data_in,
 
   output                    o_fbr1_en,
@@ -152,7 +152,7 @@ module sdio_cia (
   input                     i_func_active,
   output                    o_bus_release_req_stb,
   output        [3:0]       o_func_select,
-  input                     i_data_txrx_in_progress_flag,
+  input                     i_txrx_in_progress,
   input         [7:0]       i_func_exec_status,
   input         [7:0]       i_func_ready_for_data,
   output        [15:0]      o_max_f0_block_size,
@@ -181,10 +181,14 @@ localparam                      WRITE_START = 4'h1;
 localparam                      WRITE       = 4'h2;
 localparam                      READ_START  = 4'h3;
 localparam                      READ        = 4'h4;
+localparam                      FINISHED    = 4'h5;
 
 //Local Registers/Wires
 wire                            cia_i_activate[0:`NO_SELECT_INDEX + 1];
 wire            [7:0]           cia_o_data_out[0:`NO_SELECT_INDEX + 1];
+//wire                            cia_o_ready   [0:`NO_SELECT_INDEX + 1];
+//wire                            cia_o_finished[0:`NO_SELECT_INDEX + 1];
+//wire                            cia_o_data_stb[0:`NO_SELECT_INDEX + 1];
 reg             [3:0]           func_sel;
 
 reg             [3:0]           state;
@@ -214,7 +218,7 @@ sdio_cccr cccr (
   .i_func_active                (i_func_active                ),
   .o_bus_release_req_stb        (o_bus_release_req_stb        ),
   .o_func_select                (o_func_select                ),
-  .i_data_txrx_in_progress_flag (i_data_txrx_in_progress_flag ),
+  .i_txrx_in_progress           (i_data_txrx_in_progress_flag ),
   .i_func_exec_status           (i_func_exec_status           ),
   .i_func_ready_for_data        (i_func_ready_for_data        ),
   .o_max_f0_block_size          (o_max_f0_block_size          ),
@@ -286,11 +290,14 @@ assign  o_fbr1_block_size             = 16'h0000;
 end
 endgenerate
 
-/*
+
+
+
+
 generate
 if (`FUNC2_EN) begin
 sdio_fbr #(
-  .INDEX                        (1                            ),
+  .INDEX                        (`FUNC2_INDEX                 ),
   .FUNC_TYPE                    (`FUNC2_TYPE                  ),
   .FUNC_TYPE_EXT                (4'h0                         ),    //TODO
   .SUPPORT_PWR_SEL              (1'b0                         ),    //TODO
@@ -323,6 +330,7 @@ assign  o_fbr2_pwr_mode               = 4'h0;
 assign  o_fbr2_block_size             = 16'h0000;
 
 end
+endgenerate
 
 generate
 if (`FUNC3_EN) begin
@@ -361,6 +369,7 @@ assign  o_fbr3_pwr_mode               = 4'h0;
 assign  o_fbr3_block_size             = 16'h0000;
 
 end
+endgenerate
 
 generate
 if (`FUNC4_EN) begin
@@ -399,6 +408,7 @@ assign  o_fbr4_pwr_mode               = 4'h0;
 assign  o_fbr4_block_size             = 16'h0000;
 
 end
+endgenerate
 
 generate
 if (`FUNC5_EN) begin
@@ -437,6 +447,7 @@ assign  o_fbr5_pwr_mode               = 4'h0;
 assign  o_fbr5_block_size             = 16'h0000;
 
 end
+endgenerate
 
 generate
 if (`FUNC6_EN) begin
@@ -475,6 +486,7 @@ assign  o_fbr6_pwr_mode               = 4'h0;
 assign  o_fbr6_block_size             = 16'h0000;
 
 end
+endgenerate
 
 generate
 if (`FUNC7_EN) begin
@@ -513,13 +525,14 @@ assign  o_fbr7_pwr_mode               = 4'h0;
 assign  o_fbr7_block_size             = 16'h0000;
 
 end
+endgenerate
 
 //asynchronous logic
 assign  address                 =   i_address + data_count;
 
 //Address Multiplexer
 always @ (*) begin
-  if (rst || o_soft_rest) begin
+  if (rst || o_soft_reset) begin
     func_sel      <=  `NO_SELECT_INDEX;
   end
   else begin
@@ -567,52 +580,55 @@ end
 
 
 //All FPR Channel Specific interfaces are broght ito the multiplexer
-assign  cia_o_finished[`FUNC1_INDEX]      = i_fbr1_ready;
+/*
+assign  cia_o_finished[`FUNC1_INDEX]      = i_fbr1_finished;
 assign  cia_o_ready   [`FUNC1_INDEX]      = i_fbr1_ready;
 assign  cia_o_data_out[`FUNC1_INDEX]      = i_fbr1_data_out;
 assign  cia_o_data_stb[`FUNC1_INDEX]      = i_fbr1_data_stb;
 
-assign  cia_o_finished[`FUNC2_INDEX]      = i_fbr2_ready;
+assign  cia_o_finished[`FUNC2_INDEX]      = i_fbr2_finished;
 assign  cia_o_ready   [`FUNC2_INDEX]      = i_fbr2_ready;
 assign  cia_o_data_out[`FUNC2_INDEX]      = i_fbr2_data_out;
 assign  cia_o_data_stb[`FUNC2_INDEX]      = i_fbr2_data_stb;
 
-assign  cia_o_finished[`FUNC3_INDEX]      = i_fbr3_ready;
+assign  cia_o_finished[`FUNC3_INDEX]      = i_fbr3_finished;
 assign  cia_o_ready   [`FUNC3_INDEX]      = i_fbr3_ready;
 assign  cia_o_data_out[`FUNC3_INDEX]      = i_fbr3_data_out;
 assign  cia_o_data_stb[`FUNC3_INDEX]      = i_fbr3_data_stb;
 
-assign  cia_o_finished[`FUNC4_INDEX]      = i_fbr4_ready;
+assign  cia_o_finished[`FUNC4_INDEX]      = i_fbr4_finished;
 assign  cia_o_ready   [`FUNC4_INDEX]      = i_fbr4_ready;
 assign  cia_o_data_out[`FUNC4_INDEX]      = i_fbr4_data_out;
 assign  cia_o_data_stb[`FUNC4_INDEX]      = i_fbr4_data_stb;
 
-assign  cia_o_finished[`FUNC5_INDEX]      = i_fbr5_ready;
+assign  cia_o_finished[`FUNC5_INDEX]      = i_fbr5_finished;
 assign  cia_o_ready   [`FUNC5_INDEX]      = i_fbr5_ready;
 assign  cia_o_data_out[`FUNC5_INDEX]      = i_fbr5_data_out;
 assign  cia_o_data_stb[`FUNC5_INDEX]      = i_fbr5_data_stb;
 
-assign  cia_o_finished[`FUNC6_INDEX]      = i_fbr6_ready;
+assign  cia_o_finished[`FUNC6_INDEX]      = i_fbr6_finished;
 assign  cia_o_ready   [`FUNC6_INDEX]      = i_fbr6_ready;
 assign  cia_o_data_out[`FUNC6_INDEX]      = i_fbr6_data_out;
 assign  cia_o_data_stb[`FUNC6_INDEX]      = i_fbr6_data_stb;
 
-assign  cia_o_finished[`FUNC7_INDEX]      = i_fbr7_ready;
+assign  cia_o_finished[`FUNC7_INDEX]      = i_fbr7_finished;
 assign  cia_o_ready   [`FUNC7_INDEX]      = i_fbr7_ready;
 assign  cia_o_data_out[`FUNC7_INDEX]      = i_fbr7_data_out;
 assign  cia_o_data_stb[`FUNC7_INDEX]      = i_fbr7_data_stb;
+*/
 
 
-assign  cia_i_activate[func_sel]          = (func_sel == `CCCR_INDEX)     ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC1_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC2_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC3_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC4_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC5_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC6_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `FUNC7_INDEX)    ? i_activate        : 1'b0;
-assign  cia_i_activate[func_sel]          = (func_sel == `CIS_INDEX)      ? i_activate        : 1'b0;
+assign  cia_i_activate[`CCCR_INDEX ]      = (func_sel == `CCCR_INDEX )    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC1_INDEX]      = (func_sel == `FUNC1_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC2_INDEX]      = (func_sel == `FUNC2_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC3_INDEX]      = (func_sel == `FUNC3_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC4_INDEX]      = (func_sel == `FUNC4_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC5_INDEX]      = (func_sel == `FUNC5_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC6_INDEX]      = (func_sel == `FUNC6_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`FUNC7_INDEX]      = (func_sel == `FUNC7_INDEX)    ? i_activate        : 1'b0;
+assign  cia_i_activate[`CIS_INDEX  ]      = (func_sel == `CIS_INDEX  )    ? i_activate        : 1'b0;
 
+/*
 assign  o_ready                           =  cia_o_ready[func_sel];
 assign  o_finished                        =  cia_o_finished[func_sel];
 assign  o_data_out                        =  cia_o_data_out[func_sel];
@@ -632,6 +648,7 @@ assign  o_fbr_inc_addr                    = i_inc_addr;
 assign  o_fbr_data_stb                    = i_data_stb;
 assign  o_fbr_data_count                  = i_data_count;
 assign  o_fbr_data_in                     = i_data_in;
+*/
 
 
 //synchronous Logic
@@ -639,16 +656,17 @@ assign  o_fbr_data_in                     = i_data_in;
 always @ (posedge clk) begin
   //De-assert Strobes
   o_data_stb      <=  0;
-  i_data_stb      <=  0;
 
   if (rst) begin
     state               <=  IDLE;
     data_count          <=  0;
     o_ready             <=  0;
+    o_finished          <=  0;
   end
   else begin
     case (state)
       IDLE: begin
+        o_finished      <=  0;
         data_count      <=  0;
         o_ready         <=  0;
         if (i_activate) begin
@@ -690,8 +708,13 @@ always @ (posedge clk) begin
         end
         o_data_stb      <=  1;
       end
+      FINISHED: begin
+      o_finished        <=  1;
+      if (i_activate) begin
+        state           <=  IDLE;
+      end
+      end
     endcase
   end
 end
-*/
 endmodule

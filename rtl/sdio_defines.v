@@ -72,12 +72,15 @@
 
 //IO_SEND_OP_COND Response (R4 32 bits)
 `define CMD5_ARG_S18R               (24)
-`define CMD5_ARG_VHS                23:0
+`define CMD5_ARG_OCR                23:0
 
 `define VHS_DEFAULT_VALUE           (4'b0001)
 
+`define CMD7_RCA                    31:16
+
 `define CMD8_ARG_VHS_START          15
 `define CMD8_ARG_VHS_END            8
+`define CMD8_ARG_VHS                15:8
 `define CMD8_ARG_PATTERN            7:0
 
 `define CMD52_ARG_RW_FLAG           31    /* 0 = Read 1 = Write */
@@ -113,7 +116,7 @@
 `define R4_MEM_PRESENT              (35)      /* Memory is Also Availalbe */
 `define R4_UHSII_AVAILABLE          (34)      /* Ultra HS Mode II Available */
 `define R4_S18A                     (32)      /* Accept switch to 1.8V */
-`define R4_IO_OCR                   31:16     /* Operating Condition Range */
+`define R4_IO_OCR                   31:8      /* Operating Condition Range */
 
 //Response R5
 `define R5_FLAGS_RANGE              31:16

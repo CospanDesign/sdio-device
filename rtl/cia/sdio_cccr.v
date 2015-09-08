@@ -58,7 +58,7 @@ module sdio_cccr (
   input                     i_func_active,
   output  reg               o_bus_release_req_stb,
   output  reg   [3:0]       o_func_select,
-  input                     i_data_txrx_in_progress_flag,
+  input                     i_txrx_in_progress,
   input         [7:0]       i_func_exec_status,
   input         [7:0]       i_func_ready_for_data,
   output  reg   [15:0]      o_max_f0_block_size,
@@ -132,7 +132,7 @@ assign  cccr_map[`CARD_CIS_LOW_ADDR    ] = main_cis_addr[7:0];
 assign  cccr_map[`CARD_CIS_MID_ADDR    ] = main_cis_addr[15:8];
 assign  cccr_map[`CARD_CIS_HIGH_ADDR   ] = {6'b000000, main_cis_addr[17:16]};
 assign  cccr_map[`BUS_SUSPEND_ADDR     ] = {6'b000000, o_bus_release_req_stb, i_func_active};
-assign  cccr_map[`FUNC_SELECT_ADDR     ] = {i_data_txrx_in_progress_flag, 3'b000, o_func_select};
+assign  cccr_map[`FUNC_SELECT_ADDR     ] = {i_txrx_in_progress, 3'b000, o_func_select};
 assign  cccr_map[`EXEC_SELECT_ADDR     ] = {i_func_exec_status};
 assign  cccr_map[`READY_SELECT_ADDR    ] = {i_func_ready_for_data};
 assign  cccr_map[`FN0_BLOCK_SIZE_0_ADDR] = {o_max_f0_block_size[15:8]};
