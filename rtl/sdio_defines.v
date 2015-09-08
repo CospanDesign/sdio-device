@@ -86,7 +86,7 @@
 `define CMD52_ARG_RW_FLAG           31    /* 0 = Read 1 = Write */
 `define CMD52_ARG_FNUM              30:27
 `define CMD52_ARG_RAW_FLAG          26    /* Read the value of the register after a write RW_FLAG = 1*/
-`define CMD52_ARG_REG_ADDR          24:8
+`define CMD52_ARG_REG_ADDR          25:9
 `define CMD52_ARG_WR_DATA           7:0
 
 `define CMD52_RST_ADDR              6

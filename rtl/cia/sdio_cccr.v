@@ -44,7 +44,7 @@ module sdio_cccr (
   input         [7:0]       i_address,
   input                     i_data_stb,
   input         [7:0]       i_data_in,
-  output  reg   [7:0]       o_data_out,
+  output        [7:0]       o_data_out,
 
   //Function Interface
   output  reg   [7:0]       o_func_enable,
@@ -99,9 +99,15 @@ reg             [2:0]       abort_sel;
 wire            [17:0]      reg_addr;
 wire            [17:0]      main_cis_addr;
 
+//wire            [7:0]       cccr_value;
+
+
+
 //submodules
 //asynchronous logic
 assign  main_cis_addr   = `MAIN_CIS_START_ADDR;
+//assign  cccr_value      = cccr_map[i_address];
+assign  o_data_out      = cccr_map[i_address];
 
 assign  o_1_bit_mode    = (bus_width == `D1_BIT_MODE);
 assign  o_4_bit_mode    = (bus_width == `D4_BIT_MODE);
@@ -170,6 +176,7 @@ always @ (posedge clk) begin
     o_enable_async_interrupt<=  0;
     bus_width               <=  0;
 
+
   end
   else begin
     o_func_abort_stb[abort_sel]  <=  1;
@@ -209,9 +216,6 @@ always @ (posedge clk) begin
             default: begin
             end
           endcase
-        end
-        else begin
-          o_data_out                    <=  cccr_map[i_address];
         end
       end
     end

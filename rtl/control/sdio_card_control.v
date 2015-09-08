@@ -51,8 +51,6 @@ module sdio_card_control (
   output                    o_mem_en,
   //Function Interface
   output  reg   [3:0]       o_func_num,
-  output  reg               o_func_activate,
-  input                     i_func_finished,
   output  reg               o_func_inc_addr,
   output  reg               o_func_block_mode,
 
@@ -62,13 +60,15 @@ module sdio_card_control (
   output  reg   [9:0]       o_func_data_count,
 
   //Command Data Bus
+  output  reg               o_func_activate,
+  input                     i_func_finished,
   output  reg               o_cmd_bus_sel,
-  output  reg   [7:0]       o_cmd_func_write_data,
-  output  reg               o_cmd_func_write_stb,
-  input                     i_cmd_func_read_stb,
-  input         [7:0]       i_cmd_func_read_data,
-  input                     i_cmd_func_data_rdy,
-  output  reg               o_cmd_func_host_rdy,
+  output  reg   [7:0]       o_func_write_data,
+  output  reg               o_func_write_stb,
+  input                     i_func_read_stb,
+  input         [7:0]       i_func_read_data,
+  input                     i_func_data_rdy,
+  output  reg               o_func_host_rdy,
 
   // tunning block
   output  reg               o_tunning_block,
@@ -160,7 +160,7 @@ assign  r5_cmd      = (state == RESET) || (state == INITIALIZE) || (state == STA
                       (state == TRANSFER)                                                                    ? 2'b10 :
                                                                                                                2'b11;
 
-//assign  o_cmd_func_host_rdy = i_cmd_phy_idle; /* Can only send data when i_cmd phy is not sending data */
+//assign  o_func_host_rdy = i_cmd_phy_idle; /* Can only send data when i_cmd phy is not sending data */
 assign  cia_activate  = (o_func_num == 0);
 assign  o_mem_en      = 1'b0;
 
@@ -241,8 +241,7 @@ end
 always @ (posedge sdio_clk) begin
   //Deassert Strobes
   rsps_stb                          <=  0;
-  o_func_activate                   <=  0;
-  o_cmd_func_write_stb              <=  0;
+  o_func_write_stb                  <=  0;
 
   if (rst || i_soft_reset) begin
     state                           <=  INITIALIZE;
@@ -261,13 +260,13 @@ always @ (posedge sdio_clk) begin
     o_func_write_flag               <=  0;              /* Read Write Flag R = 0, W = 1 */
     o_func_rd_after_wr              <=  0;
     o_func_addr                     <=  18'h0;
-    o_cmd_func_write_data           <=  8'h00;
+    o_func_write_data               <=  8'h00;
     o_func_data_count               <=  8'h00;
     data_count                      <=  0;
 
     response_index                  <=  0;
     o_tunning_block                 <=  0;
-    o_cmd_func_host_rdy             <=  0;
+    o_func_host_rdy                 <=  0;
     cmd_data                        <=  0;
     o_cmd_bus_sel                   <=  1;
 
@@ -280,129 +279,133 @@ always @ (posedge sdio_clk) begin
   else    //Strobe
     if (rsps_stb) begin
       //Whenever a response is successful de-assert any of the errors, they will have been picked up by the response
-      bad_crc                         <=  0;
-      cmd_arg_out_of_range            <=  0;
-      illegal_command                 <=  0;
-      card_error                      <=  0;  //Unknown Error
+      bad_crc                       <=  0;
+      cmd_arg_out_of_range          <=  0;
+      illegal_command               <=  0;
+      card_error                    <=  0;  //Unknown Error
     end
     //Card Bootup Sequence
     case (state)
       RESET: begin
-        o_cmd_func_host_rdy           <= 0;
-        state                         <= INITIALIZE;
-        o_cmd_bus_sel                 <= 1;
+        o_func_host_rdy             <= 0;
+        o_func_activate             <= 0;
+        o_cmd_bus_sel               <= 1;
+        state                       <= INITIALIZE;
       end
       INITIALIZE: begin
-        o_cmd_func_host_rdy           <= 0;
-        o_cmd_bus_sel                 <= 1;
+        o_func_host_rdy             <= 0;
+        o_cmd_bus_sel               <= 1;
+        o_func_activate             <= 0;
         if (i_cmd_stb) begin
           //$display ("Strobe!");
           case (i_cmd)
             `SD_CMD_IO_SEND_OP_CMD: begin
-              v1p8_sel                <=  i_cmd_arg[`CMD5_ARG_S18R];
-              voltage_select          <=  i_cmd_arg[`CMD5_ARG_OCR] & `OCR_VALUE;
-              response_index          <=  R4;
-              rsps_stb                <=  1;
+              v1p8_sel              <=  i_cmd_arg[`CMD5_ARG_S18R];
+              voltage_select        <=  i_cmd_arg[`CMD5_ARG_OCR] & `OCR_VALUE;
+              response_index        <=  R4;
+              rsps_stb              <=  1;
             end
             `SD_CMD_SEND_RELATIVE_ADDR: begin
-              state                   <=  STANDBY;
-              response_index          <=  R6;
+              state                 <=  STANDBY;
+              response_index        <=  R6;
               //TODO: Possibly change the relative card address (RCA)
-              rsps_stb                <=  1;
+              rsps_stb              <=  1;
             end
             `SD_CMD_GO_INACTIVE_STATE: begin
-              state                   <=  INACTIVE;
+              state                 <=  INACTIVE;
             end
             default: begin
-              illegal_command         <=  1;
-              o_rsps_fail             <=  1;
+              illegal_command       <=  1;
+              o_rsps_fail           <=  1;
             end
           endcase
         end
       end
       STANDBY: begin
-        o_cmd_func_host_rdy           <= 0;
-        o_cmd_bus_sel                 <= 1;
+        o_func_activate             <= 0;
+        o_func_host_rdy             <= 0;
+        o_cmd_bus_sel               <= 1;
         if (i_cmd_stb) begin
           case (i_cmd)
             `SD_CMD_SEND_RELATIVE_ADDR: begin
-              state                   <=  STANDBY;
-              response_index          <=  R6;
-              rsps_stb                <=  1;
+              state                 <=  STANDBY;
+              response_index        <=  R6;
+              rsps_stb              <=  1;
             end
             `SD_CMD_SEL_DESEL_CARD: begin
-              response_index          <=  R1;
+              response_index        <=  R1;
               if (register_card_address == i_cmd_arg[`CMD7_RCA]) begin
-                state                 <= COMMAND;
-                rsps_stb              <=  1;
+                state               <= COMMAND;
+                rsps_stb            <=  1;
               end
               else begin
-                o_rsps_fail           <=  1;
+                o_rsps_fail         <=  1;
               end
             end
             `SD_CMD_GO_INACTIVE_STATE: begin
-              state                   <=  INACTIVE;
+              state                 <=  INACTIVE;
             end
             default: begin
-              illegal_command         <=  1;
-              o_rsps_fail             <=  1;
+              illegal_command       <=  1;
+              o_rsps_fail           <=  1;
             end
           endcase
         end
       end
       COMMAND: begin
-        o_cmd_func_host_rdy           <= 0;
-        o_cmd_bus_sel                 <= 1;
+        o_func_activate             <= 0;
+        o_func_host_rdy             <= 0;
+        o_cmd_bus_sel               <= 1;
+        data_count                  <= 0;
         if (i_cmd_stb) begin
-          direct_read_write           <= 0;
+          direct_read_write         <= 0;
           case (i_cmd)
             `SD_CMD_IO_RW_DIRECT: begin
-              o_func_write_flag       <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
-              o_func_rd_after_wr      <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
-              o_func_num              <= i_cmd_arg[`CMD52_ARG_FNUM    ];
-              o_func_addr             <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
-              o_cmd_func_write_data   <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
-              o_func_inc_addr         <= 0;
-              o_func_data_count       <= 1;
-              o_func_activate         <= 1;
-              rsps_stb                <= 1;
-              state                   <= TRANSFER;
-              direct_read_write       <= 1;
-              response_index          <= R5;
-              cmd_data                <=  0;
+              o_func_write_flag     <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
+              o_func_rd_after_wr    <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
+              o_func_num            <= i_cmd_arg[`CMD52_ARG_FNUM    ];
+              o_func_addr           <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
+              o_func_write_data     <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
+              o_func_inc_addr       <= 0;
+              o_func_data_count     <= 1;
+              o_func_activate       <= 1;
+              state                 <= TRANSFER;
+              direct_read_write     <= 1;
+              response_index        <= R5;
+              cmd_data              <= 0;
             end
             `SD_CMD_IO_RW_EXTENDED: begin
-              o_func_write_flag       <= i_cmd_arg[`CMD53_ARG_RW_FLAG   ];
-              o_func_rd_after_wr      <= 0;
-              o_func_num              <= i_cmd_arg[`CMD53_ARG_FNUM      ];
-              o_func_addr             <= i_cmd_arg[`CMD53_ARG_REG_ADDR  ];
-              o_func_data_count       <= i_cmd_arg[`CMD53_ARG_DATA_COUNT];
-              o_func_block_mode       <= i_cmd_arg[`CMD53_ARG_BLOCK_MODE];
-              o_func_inc_addr         <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
-              o_func_activate         <= 1;
-              rsps_stb                <= 1;
-              state                   <= TRANSFER;
-              response_index          <=  R5;
-              o_cmd_bus_sel           <=  0;
+              o_func_write_flag     <= i_cmd_arg[`CMD53_ARG_RW_FLAG   ];
+              o_func_rd_after_wr    <= 0;
+              o_func_num            <= i_cmd_arg[`CMD53_ARG_FNUM      ];
+              o_func_addr           <= i_cmd_arg[`CMD53_ARG_REG_ADDR  ];
+              o_func_data_count     <= i_cmd_arg[`CMD53_ARG_DATA_COUNT];
+              o_func_block_mode     <= i_cmd_arg[`CMD53_ARG_BLOCK_MODE];
+              o_func_inc_addr       <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
+              o_func_activate       <= 1;
+              rsps_stb              <= 1;
+              state                 <= TRANSFER;
+              response_index        <=  R5;
+              o_cmd_bus_sel         <=  0;
             end
             `SD_CMD_SEL_DESEL_CARD: begin
               if (register_card_address != i_cmd_arg[`CMD7_RCA]) begin
-                state                 <= STANDBY;
+                state               <= STANDBY;
               end
-              response_index          <= R1;
-              rsps_stb                <= 1;
+              response_index        <= R1;
+              rsps_stb              <= 1;
             end
             `SD_CMD_SEND_TUNNING_BLOCK: begin
-              response_index          <= R1;
-              rsps_stb                <= 1;
-              o_tunning_block         <= 1;
+              response_index        <= R1;
+              rsps_stb              <= 1;
+              o_tunning_block       <= 1;
             end
             `SD_CMD_GO_INACTIVE_STATE: begin
-              state                   <= INACTIVE;
+              state                 <= INACTIVE;
             end
             default: begin
-              illegal_command         <= 1;
-              o_rsps_fail             <= 1;
+              illegal_command       <= 1;
+              o_rsps_fail           <= 1;
             end
           endcase
         end
@@ -410,56 +413,67 @@ always @ (posedge sdio_clk) begin
       TRANSFER: begin
         //Data Transaction
         if (direct_read_write) begin
-          o_cmd_func_host_rdy       <= 1;
-          if (data_count < o_func_data_count) begin
+          //Only Transfer 1 Byte
+          o_func_host_rdy           <= 1;
+          //if (data_count < o_func_data_count) begin
             if (o_func_write_flag) begin
               //Writing
-              if (i_cmd_func_data_rdy) begin
-                o_cmd_func_write_stb<= 1;
+              if (i_func_data_rdy) begin
+                o_func_write_stb    <= 1;
                 data_count          <= data_count + 1;
+                rsps_stb            <= 1;
+                o_func_activate     <= 0;
+                o_func_host_rdy     <= 0;
+                state               <= COMMAND;
               end
               cmd_data              <= 0;
             end
             else begin
               //Reading
-              if (i_cmd_func_read_stb) begin
-                cmd_data            <= i_cmd_func_read_data;
+              if (i_func_read_stb) begin
+                cmd_data            <= i_func_read_data;
+                o_func_host_rdy     <= 0;
                 data_count          <= data_count + 1;
+                rsps_stb            <= 1;
+                o_func_activate     <= 0;
+                state               <= COMMAND;
               end
             end
-          end
+          //end
         end
-
-        if (i_func_finished) begin
-          o_func_activate             <= 0;
-          state                       <= COMMAND;
+        else begin
+          //Not command bus read/write
+          if (i_func_finished) begin
+            o_func_activate           <= 0;
+            state                     <= COMMAND;
+          end
         end
 
         if (i_cmd_stb) begin
           case (i_cmd)
             `SD_CMD_IO_RW_DIRECT: begin
               $display("Direct Read/Write");
-              o_func_write_flag       <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
-              o_func_rd_after_wr      <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
-              o_func_num              <= i_cmd_arg[`CMD52_ARG_FNUM    ];
-              o_func_addr             <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
-              o_cmd_func_write_data   <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
-              o_func_activate         <= 1;
-              rsps_stb                <= 1;
-              o_func_data_count       <= 1;
-              cmd_data                <= 0;
+              o_func_write_flag     <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
+              o_func_rd_after_wr    <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
+              o_func_num            <= i_cmd_arg[`CMD52_ARG_FNUM    ];
+              o_func_addr           <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
+              o_func_write_data     <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
+              o_func_activate       <= 1;
+              rsps_stb              <= 1;
+              o_func_data_count     <= 1;
+              cmd_data              <= 0;
             end
             default: begin
-              illegal_command         <= 1;
-              o_rsps_fail             <= 1;
+              illegal_command       <= 1;
+              o_rsps_fail           <= 1;
             end
           endcase
         end
       end
       INACTIVE: begin
         //Nothing Going on here
-        o_cmd_func_host_rdy           <= 0;
-        o_rsps_fail                   <= 1;
+        o_func_host_rdy             <= 0;
+        o_rsps_fail                 <= 1;
       end
       default: begin
       end

@@ -40,9 +40,9 @@ module sdio_cia (
   input                     clk,    // SDIO PHY Clock
   input                     rst,
 
+  output  reg               o_ready,
   input                     i_activate,
   input                     i_ready,
-  output  reg               o_ready,
   output  reg               o_finished,
   input                     i_write_flag,
   input                     i_inc_addr,
@@ -82,9 +82,6 @@ module sdio_cia (
   output                    o_fbr7_csa_en,
   output        [3:0]       o_fbr7_pwr_mode,
   output        [15:0]      o_fbr7_block_size,
-
-
-
 
   output        [7:0]       o_fbr_select,
   output                    o_fbr_activate,
@@ -524,6 +521,9 @@ assign  o_fbr7_csa_en                 = 1'b0;
 assign  o_fbr7_pwr_mode               = 4'h0;
 assign  o_fbr7_block_size             = 16'h0000;
 
+assign  o_data_out                        =  cia_o_data_out[func_sel];
+
+
 end
 endgenerate
 
@@ -710,7 +710,7 @@ always @ (posedge clk) begin
       end
       FINISHED: begin
       o_finished        <=  1;
-      if (i_activate) begin
+      if (!i_activate) begin
         state           <=  IDLE;
       end
       end
