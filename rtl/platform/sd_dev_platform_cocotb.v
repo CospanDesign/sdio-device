@@ -54,7 +54,6 @@ inout         [3:0] io_phy_sd_data
 
 //Local Parameters
 //Registers/Wires
-reg                 toggle;
 wire                pos_edge_clk;
 reg                 prev_phy_clk;
 wire          [7:0] data_out;
@@ -70,7 +69,7 @@ assign  o_sd_cmd_in   = io_phy_sd_cmd;
 assign  io_phy_sd_data= i_sd_data_dir ? data_out: 8'hZ;
 assign  o_sd_data_in  = io_phy_sd_data;
 
-assign  pos_edge_clk  = (i_phy_clk & !prev_phy_clk);
+assign  pos_edge_clk  = (clk & !prev_phy_clk);
 
 assign  data_out      = pos_edge_clk ?  { i_sd_data_out[0],
                                           i_sd_data_out[2],
@@ -95,10 +94,8 @@ always @ (posedge clk) begin
   if (rst) begin
     o_out_clk     <=  0;
     prev_phy_clk  <=  0;
-    toggle        <=  0;
     o_locked      <=  0;
     lock_count    <=  0;
-    
   end
   else begin
     o_out_clk     <= ~o_out_clk;
@@ -112,5 +109,7 @@ always @ (posedge clk) begin
 
   end
 end
+
+
 endmodule
 

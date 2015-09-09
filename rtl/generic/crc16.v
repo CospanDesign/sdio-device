@@ -51,6 +51,7 @@ module crc16 #(
 )(
   input                 clk,
   input                 rst,
+  input                 en,
   input                 bit,
   output  reg   [15:0]  crc
 );
@@ -68,7 +69,8 @@ always @ (posedge clk) begin
   end
   else begin
     //Shift the output value
-    crc <=  bit ? ({crc[14:0], 1'b0} ^ POLYNOMIAL) : {crc[14:0], 1'b0};
+    if (en)
+      crc <=  bit ? ({crc[14:0], 1'b0} ^ POLYNOMIAL) : {crc[14:0], 1'b0};
   end
 end
 

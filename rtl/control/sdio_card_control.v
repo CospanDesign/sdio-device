@@ -50,6 +50,9 @@ module sdio_card_control (
   //SD Flash Interface
   output                    o_mem_en,
   //Function Interface
+  output  reg               o_func_activate,
+  input                     i_func_finished,
+
   output  reg   [3:0]       o_func_num,
   output  reg               o_func_inc_addr,
   output  reg               o_func_block_mode,
@@ -57,18 +60,12 @@ module sdio_card_control (
   output  reg               o_func_write_flag,      /* Read = 0, Write = 1 */
   output  reg               o_func_rd_after_wr,
   output  reg   [17:0]      o_func_addr,
-  output  reg   [9:0]       o_func_data_count,
+  output  reg   [8:0]       o_func_data_count,
 
   //Command Data Bus
-  output  reg               o_func_activate,
-  input                     i_func_finished,
   output  reg               o_cmd_bus_sel,
   output  reg   [7:0]       o_func_write_data,
-  output  reg               o_func_write_stb,
-  input                     i_func_read_stb,
   input         [7:0]       i_func_read_data,
-  input                     i_func_data_rdy,
-  output  reg               o_func_host_rdy,
 
   // tunning block
   output  reg               o_tunning_block,
@@ -241,7 +238,7 @@ end
 always @ (posedge sdio_clk) begin
   //Deassert Strobes
   rsps_stb                          <=  0;
-  o_func_write_stb                  <=  0;
+  o_func_activate                   <=  0;
 
   if (rst || i_soft_reset) begin
     state                           <=  INITIALIZE;
@@ -266,7 +263,7 @@ always @ (posedge sdio_clk) begin
 
     response_index                  <=  0;
     o_tunning_block                 <=  0;
-    o_func_host_rdy                 <=  0;
+    //o_func_host_rdy                 <=  0;
     cmd_data                        <=  0;
     o_cmd_bus_sel                   <=  1;
 
@@ -287,15 +284,13 @@ always @ (posedge sdio_clk) begin
     //Card Bootup Sequence
     case (state)
       RESET: begin
-        o_func_host_rdy             <= 0;
-        o_func_activate             <= 0;
+        //o_func_host_rdy             <= 0;
         o_cmd_bus_sel               <= 1;
         state                       <= INITIALIZE;
       end
       INITIALIZE: begin
-        o_func_host_rdy             <= 0;
+        //o_func_host_rdy             <= 0;
         o_cmd_bus_sel               <= 1;
-        o_func_activate             <= 0;
         if (i_cmd_stb) begin
           //$display ("Strobe!");
           case (i_cmd)
@@ -322,8 +317,7 @@ always @ (posedge sdio_clk) begin
         end
       end
       STANDBY: begin
-        o_func_activate             <= 0;
-        o_func_host_rdy             <= 0;
+        //o_func_host_rdy             <= 0;
         o_cmd_bus_sel               <= 1;
         if (i_cmd_stb) begin
           case (i_cmd)
@@ -353,8 +347,7 @@ always @ (posedge sdio_clk) begin
         end
       end
       COMMAND: begin
-        o_func_activate             <= 0;
-        o_func_host_rdy             <= 0;
+        //o_func_host_rdy             <= 0;
         o_cmd_bus_sel               <= 1;
         data_count                  <= 0;
         if (i_cmd_stb) begin
@@ -368,7 +361,6 @@ always @ (posedge sdio_clk) begin
               o_func_write_data     <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
               o_func_inc_addr       <= 0;
               o_func_data_count     <= 1;
-              o_func_activate       <= 1;
               state                 <= TRANSFER;
               direct_read_write     <= 1;
               response_index        <= R5;
@@ -382,7 +374,6 @@ always @ (posedge sdio_clk) begin
               o_func_data_count     <= i_cmd_arg[`CMD53_ARG_DATA_COUNT];
               o_func_block_mode     <= i_cmd_arg[`CMD53_ARG_BLOCK_MODE];
               o_func_inc_addr       <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
-              o_func_activate       <= 1;
               rsps_stb              <= 1;
               state                 <= TRANSFER;
               response_index        <=  R5;
@@ -411,44 +402,19 @@ always @ (posedge sdio_clk) begin
         end
       end
       TRANSFER: begin
-        //Data Transaction
-        if (direct_read_write) begin
-          //Only Transfer 1 Byte
-          o_func_host_rdy           <= 1;
-          //if (data_count < o_func_data_count) begin
-            if (o_func_write_flag) begin
-              //Writing
-              if (i_func_data_rdy) begin
-                o_func_write_stb    <= 1;
-                data_count          <= data_count + 1;
-                rsps_stb            <= 1;
-                o_func_activate     <= 0;
-                o_func_host_rdy     <= 0;
-                state               <= COMMAND;
-              end
-              cmd_data              <= 0;
-            end
-            else begin
-              //Reading
-              if (i_func_read_stb) begin
-                cmd_data            <= i_func_read_data;
-                o_func_host_rdy     <= 0;
-                data_count          <= data_count + 1;
-                rsps_stb            <= 1;
-                o_func_activate     <= 0;
-                state               <= COMMAND;
-              end
-            end
-          //end
-        end
-        else begin
-          //Not command bus read/write
-          if (i_func_finished) begin
-            o_func_activate           <= 0;
-            state                     <= COMMAND;
+        o_func_activate             <= 1;
+        //Not command bus read/write
+        if (i_func_finished) begin
+          o_func_activate           <= 0;
+          rsps_stb                  <= 1;
+          if (o_func_rd_after_wr || !o_func_write_flag) begin
+            cmd_data                <= i_func_read_data;
           end
+          else begin
+            cmd_data                <= 0;
+          end
+          state                     <= COMMAND;
         end
-
         if (i_cmd_stb) begin
           case (i_cmd)
             `SD_CMD_IO_RW_DIRECT: begin
@@ -458,10 +424,12 @@ always @ (posedge sdio_clk) begin
               o_func_num            <= i_cmd_arg[`CMD52_ARG_FNUM    ];
               o_func_addr           <= i_cmd_arg[`CMD52_ARG_REG_ADDR];
               o_func_write_data     <= i_cmd_arg[`CMD52_ARG_WR_DATA ];
-              o_func_activate       <= 1;
+              o_func_activate       <= 0;
               rsps_stb              <= 1;
               o_func_data_count     <= 1;
               cmd_data              <= 0;
+
+//TODO: Check if this is an abort!
             end
             default: begin
               illegal_command       <= 1;
@@ -472,7 +440,7 @@ always @ (posedge sdio_clk) begin
       end
       INACTIVE: begin
         //Nothing Going on here
-        o_func_host_rdy             <= 0;
+        //o_func_host_rdy             <= 0;
         o_rsps_fail                 <= 1;
       end
       default: begin

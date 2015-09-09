@@ -31,38 +31,28 @@ SOFTWARE.
  */
 
 module sdio_data_control (
-  input                     sdio_clk,
+  input                     clk,
   input                     rst,
 
   input                     i_write_flg,
-  input                     i_bock_mode_flg,
-  input                     i_cmd_addr,
+  input                     i_block_mode_flg,
+  input           [8:0]     i_data_cnt,
+  output  reg     [9:0]     o_total_data_cnt,
+
+  input                     i_inc_addr_flg,
+  input           [17:0]    i_cmd_address,
+  output  reg     [17:0]    o_address,
 
   input                     i_activate,
   output  reg               o_finished,
 
-  input           [17:0]    i_cmd_address,
-  input                     i_inc_addr_flg,
-
-  output  reg     [17:0]    o_address,
-  input           [8:0]     i_data_cnt,
-
-  input           [3:0]     i_func_sel,
-  input                     i_mem_sel,
   input                     i_cmd_bus_sel,  /* If this is high we can only read/write one byte */
-
-  output          [9:0]     o_total_data_cnt,
-  //output  reg               data_cntrl_rdy,
+  input                     i_mem_sel,
+  input           [3:0]     i_func_sel,
 
   //Command Bus Interface
-  //input                     i_cmd_wr_stb,
   input           [7:0]     i_cmd_wr_data,
-  //output                    o_cmd_rd_stb,
   output          [7:0]     o_cmd_rd_data,
-  //input                     i_cmd_hst_rdy,  /* CMD -> Func: Ready for receive data */
-  //output                    o_cmd_com_rdy,
-  //input                     i_activate,
-  //output                    o_finished,
 
   //Phy Data Bus Inteface
   input                     i_data_phy_wr_stb,
@@ -71,8 +61,6 @@ module sdio_data_control (
   output          [7:0]     o_data_phy_rd_data,
   input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
   output                    o_data_phy_com_rdy,
-  //input                     i_data_phy_activate,
-  //output                    o_data_phy_finished,
 
   //CIA Interface
   output  reg               o_cia_wr_stb,
@@ -82,7 +70,6 @@ module sdio_data_control (
   output  reg               o_cia_hst_rdy,
   input                     i_cia_com_rdy,
   output  reg               o_cia_activate,
-//  input                     i_cia_finished,
 
   //Function 1 Interface
   output  reg               o_func1_wr_stb,
@@ -92,7 +79,6 @@ module sdio_data_control (
   output  reg               o_func1_hst_rdy,
   input                     i_func1_com_rdy,
   output  reg               o_func1_activate,
-//  input                     i_func1_finished,
 
   //Function 2 Interface
   output  reg               o_func2_wr_stb,
@@ -102,7 +88,6 @@ module sdio_data_control (
   output  reg               o_func2_hst_rdy,
   input                     i_func2_com_rdy,
   output  reg               o_func2_activate,
-//  input                     i_func2_finished,
 
   //Function 3 Interface
   output  reg               o_func3_wr_stb,
@@ -112,7 +97,6 @@ module sdio_data_control (
   output  reg               o_func3_hst_rdy,
   input                     i_func3_com_rdy,
   output  reg               o_func3_activate,
-//  input                     i_func3_finished,
 
   //Function 4 Interface
   output  reg               o_func4_wr_stb,
@@ -122,7 +106,6 @@ module sdio_data_control (
   output  reg               o_func4_hst_rdy,
   input                     i_func4_com_rdy,
   output  reg               o_func4_activate,
-//  input                     i_func4_finished,
 
   //Function 5 Interface
   output  reg               o_func5_wr_stb,
@@ -132,7 +115,6 @@ module sdio_data_control (
   output  reg               o_func5_hst_rdy,
   input                     i_func5_com_rdy,
   output  reg               o_func5_activate,
-//  input                     i_func5_finished,
 
   //Function 6 Interface
   output  reg               o_func6_wr_stb,
@@ -142,7 +124,6 @@ module sdio_data_control (
   output  reg               o_func6_hst_rdy,
   input                     i_func6_com_rdy,
   output  reg               o_func6_activate,
-//  input                     i_func6_finished,
 
   //Function 7 Interface
   output  reg               o_func7_wr_stb,
@@ -152,7 +133,6 @@ module sdio_data_control (
   output  reg               o_func7_hst_rdy,
   input                     i_func7_com_rdy,
   output  reg               o_func7_activate,
-//  input                     i_func7_finished,
 
   //Memory Interface
   output  reg               o_mem_wr_stb,
@@ -162,9 +142,9 @@ module sdio_data_control (
   output  reg               o_mem_hst_rdy,
   input                     i_mem_com_rdy,
   output  reg               o_mem_activate
-//  input                     i_mem_finished
 
 );
+
 //local parameters
 localparam                  IDLE        = 4'h0;
 localparam                  CONFIG      = 4'h1;
@@ -180,8 +160,6 @@ wire        wr_stb;
 wire  [7:0] wr_data;
 reg         com_rdy;
 wire  [3:0] func_select;
-reg         i_activate;           //Used this signal to i_activate the function we are communicating with
-//wire        finished;           //The function has completed a transaction
 
 reg   [9:0] total_block_count;    //Total number of blocks to transfer
 reg   [9:0] block_count;
@@ -197,14 +175,11 @@ reg         lcl_activate;
 //wire        lcl_finished;
 
 reg   [3:0] state;
-reg   [9:0] data_count;
 
 reg   [3:0] ld_state;
 
 //submodules
 //asynchronous logic
-assign
-
 assign  lcl_rd_stb          = i_cmd_bus_sel   ? rd_stb        : 1'b0;
 assign  o_cmd_rd_data       = i_cmd_bus_sel   ? rd_data       : 8'h00;
 
@@ -442,7 +417,7 @@ always @ (*) begin
 end
 
 //synchronous logic
-always @ (posedge sdio_clk) begin
+always @ (posedge clk) begin
   if (rst) begin
     state                       <=  IDLE;
     o_finished                  <=  0;
@@ -465,13 +440,13 @@ always @ (posedge sdio_clk) begin
         block_count             <=  0;
         data_cntrl_rdy          <=  0;
         o_address               <=  i_cmd_address;
-        if (block_mode) begin
-          if (i_data_count == 0) begin
+        if (i_block_mode_flg) begin
+          if (i_data_cnt == 0) begin
             continuous          <=  1;
             total_block_count   <=  0;
           end
           else begin
-            total_block_count   <=  i_data_count;
+            total_block_count   <=  i_data_cnt;
           end
         end
         else begin
@@ -485,7 +460,7 @@ always @ (posedge sdio_clk) begin
         //We are ready to go, activate is high
         //Is this block mode?
         //Check to see if we need to adjust data_count (from 0 -> 512)
-        if (block_mode) begin
+        if (i_block_mode_flg) begin
           o_total_data_cnt      <=  512;
           if (!continuous) begin
             block_count         <=  block_count + 1;
@@ -494,8 +469,9 @@ always @ (posedge sdio_clk) begin
         else begin
           if (i_data_cnt == 0) begin
             o_total_data_cnt    <=  512;
+          end
           else begin
-            o_total_data_cnt    <=  i_data_count;
+            o_total_data_cnt    <=  i_data_cnt;
           end
         end
         state                   <=  ACTIVATE;
@@ -505,7 +481,7 @@ always @ (posedge sdio_clk) begin
         if (data_count < o_total_data_cnt) begin
           if (wr_stb || rd_stb) begin
             data_count          <=  data_count + 1;
-            if (i_inc_addr_flag) begin
+            if (i_inc_addr_flg) begin
               o_address         <=  o_address + 1;
             end
           end
@@ -537,7 +513,7 @@ always @ (posedge sdio_clk) begin
 end
 
 //Local Data Reader/Writer
-always @ (posedge sdio_clk) begin
+always @ (posedge clk) begin
   lcl_wr_stb              <=  0;
   if (rst) begin
     ld_state              <=  IDLE;

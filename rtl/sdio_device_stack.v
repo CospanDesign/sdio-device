@@ -89,9 +89,6 @@ module sdio_device_stack (
   output          [15:0]    o_fbr7_block_size,
 
 
-  //Function Bus
-  output                    o_func_inc_addr,
-
   //Function 1 Interface
   output                    o_func1_wr_stb,
   output          [7:0]     o_func1_wr_data,
@@ -100,7 +97,6 @@ module sdio_device_stack (
   output                    o_func1_hst_rdy,
   input                     i_func1_com_rdy,
   output                    o_func1_activate,
-  //input                     i_func1_finished,
 
   //Function 2 Interface
   output                    o_func2_wr_stb,
@@ -110,8 +106,6 @@ module sdio_device_stack (
   output                    o_func2_hst_rdy,
   input                     i_func2_com_rdy,
   output                    o_func2_activate,
-  //input                     i_func2_finished,
-
 
   //Function 3 Interface
   output                    o_func3_wr_stb,
@@ -121,8 +115,6 @@ module sdio_device_stack (
   output                    o_func3_hst_rdy,
   input                     i_func3_com_rdy,
   output                    o_func3_activate,
-  //input                     i_func3_finished,
-
 
   //Function 4 Interface
   output                    o_func4_wr_stb,
@@ -132,8 +124,6 @@ module sdio_device_stack (
   output                    o_func4_hst_rdy,
   input                     i_func4_com_rdy,
   output                    o_func4_activate,
-  //input                     i_func4_finished,
-
 
   //Function 5 Interface
   output                    o_func5_wr_stb,
@@ -143,8 +133,6 @@ module sdio_device_stack (
   output                    o_func5_hst_rdy,
   input                     i_func5_com_rdy,
   output                    o_func5_activate,
-  //input                     i_func5_finished,
-
 
   //Function 6 Interface
   output                    o_func6_wr_stb,
@@ -154,8 +142,6 @@ module sdio_device_stack (
   output                    o_func6_hst_rdy,
   input                     i_func6_com_rdy,
   output                    o_func6_activate,
-  //input                     i_func6_finished,
-
 
   //Function 7 Interface
   output                    o_func7_wr_stb,
@@ -165,8 +151,6 @@ module sdio_device_stack (
   output                    o_func7_hst_rdy,
   input                     i_func7_com_rdy,
   output                    o_func7_activate,
-  //input                     i_func7_finished,
-
 
   //Memory Interface
   output                    o_mem_wr_stb,
@@ -176,11 +160,11 @@ module sdio_device_stack (
   output                    o_mem_hst_rdy,
   input                     i_mem_com_rdy,
   output                    o_mem_activate,
-  //input                     i_mem_finished,
 
-
+  output                    o_func_write_flag,
   output          [3:0]     o_func_num,
   output                    o_func_rd_after_wr,
+  output                    o_func_inc_addr,
   output          [17:0]    o_func_addr,
   output          [9:0]     o_func_data_count,
 
@@ -221,6 +205,8 @@ wire                cmd_stb;
 wire                cmd_crc_stb;
 wire        [5:0]   cmd;
 wire        [31:0]  cmd_arg;
+wire        [17:0]  cmd_addr;
+wire        [8:0]   cmd_data_cnt;
 
 wire        [39:0]  rsps;
 wire        [7:0]   rsps_len;
@@ -229,8 +215,6 @@ wire                rsps_fail;
 wire                interrupt;
 wire                read_wait;
 wire                chip_select_n;
-
-wire                func_block_mode;
 
 //Function Level
 wire                cmd_bus_sel;
@@ -289,8 +273,6 @@ wire                data_phy_rd_stb;
 wire        [7:0]   data_phy_rd_data;
 wire                data_phy_hst_rdy;
 wire                data_phy_com_rdy;
-wire                data_phy_activate;
-wire                data_phy_finished;
 
 wire                cia_wr_stb;
 wire        [7:0]   cia_wr_data;
@@ -315,19 +297,15 @@ sdio_card_control card_controller (
   .o_func_block_mode        (func_block_mode            ),/* CMD -> FUNC: This is a block level transfer, not byte */
   .o_func_write_flag        (o_func_write_flag          ),/* CMD -> FUNC: We are writing */
   .o_func_rd_after_wr       (o_func_rd_after_wr         ),/* CMD -> FUNC: Read the value after a write */
-  .o_func_addr              (o_func_addr                ),/* CMD -> FUNC: Address we are talking to */
-  .o_func_data_count        (o_func_data_count          ),/* CMD -> FUNC: number of data bytes/blocks to read/write */
+  .o_func_addr              (cmd_addr                   ),/* CMD -> FUNC: Address we are talking to */
+  .o_func_data_count        (cmd_data_cnt               ),/* CMD -> FUNC: number of data bytes/blocks to read/write */
 
   //Command Data Bus
   .o_cmd_bus_sel            (cmd_bus_sel                ),/* CMD -> FUNC: Indicate that data will be on command bus */
   .o_func_activate          (cmd_func_activate          ),/* CMD -> FUNC: Start a function layer transaction */
   .i_func_finished          (cmd_func_finished          ),/* FUNC -> CMD: Function has finished */
-  .o_func_write_stb         (cmd_func_write_stb         ),/* CMD -> FUNC: Data Write strobe out */
   .o_func_write_data        (cmd_func_write_data        ),/* CMD -> FUNC: Data to Write */
-  .i_func_read_stb          (cmd_func_read_stb          ),/* CMD -> FUNC: Data Read Strobe */
   .i_func_read_data         (cmd_func_read_data         ),/* FUNC -> CMD: Read Data */
-  .i_func_data_rdy          (cmd_func_data_rdy          ),/* FUNC -> CMD: Function is ready for write data */
-  .o_func_host_rdy          (cmd_func_host_rdy          ),/* CMD -> FUNC: Host is ready to read data */
 
   .o_tunning_block          (tunning_block              ),
 
@@ -346,23 +324,28 @@ sdio_card_control card_controller (
 );
 
 sdio_data_control data_bus_interconnect(
+  .clk                      (sdio_clk                   ),
   .rst                      (rst                        ),
+
+  .i_write_flg              (o_func_write_flag          ),  /* CMD -> *: We are writing */
+  .i_block_mode_flg         (func_block_mode            ),  /* CMD -> DATA CNTRL: this is a block mode transfer */
+  .i_data_cnt               (cmd_data_cnt               ),
+  .o_total_data_cnt         (o_func_data_count          ),
+
+  .i_inc_addr_flg           (o_func_inc_addr            ),
+  .i_cmd_address            (cmd_addr                   ),
+  .o_address                (o_func_addr                ),
+
+  .i_activate               (cmd_func_activate          ),  /* CMD -> DATA CNTRL: Activate transaction */
+  .o_finished               (cmd_func_finished          ),  /* DATA CNTRL -> CMD: Finished with transaction */
+
   .i_cmd_bus_sel            (cmd_bus_sel                ),  /* If this is high we can only read/write one byte */
   .i_mem_sel                (o_mem_en                   ),  /* When high this selects the memory */
   .i_func_sel               (o_func_num                 ),  /* Select the function number */
 
-  .i_write_flg              (o_func_write_flag          ),  /* CMD -> *: We are writing */
-  .i_block_mode_flg         (func_bock_mode             ),  /* CMD -> DATA CNTRL: this is a block mode transfer */
-  .i_activate               (cmd_func_activate          ),  /* CMD -> DATA CNTRL: Activate transaction */
-  .o_finished               (cmd_func_finished          ),  /* DATA CNTRL -> CMD: Finished with transaction */
-
   //Command Bus Interface
-  .i_cmd_wr_stb             (cmd_func_write_stb         ),  /* CMD -> FUNC Write Data Strobe */
   .i_cmd_wr_data            (cmd_func_write_data        ),  /* CMD -> FUNC: Write Data */
-  .o_cmd_rd_stb             (cmd_func_read_stb          ),  /* FUNC -> CMD: Strobbing Data */
   .o_cmd_rd_data            (cmd_func_read_data         ),  /* FUNC -> CMD: Data from func to host */
-  .i_cmd_hst_rdy            (cmd_func_host_rdy          ),  /* CMD  -> FUNC: Ready for receive data */
-  .o_cmd_com_rdy            (cmd_func_data_rdy          ),  /* FUNC -> CMD: Function is ready for data */
 
   //Phy Data Bus Inteface
   .i_data_phy_wr_stb        (data_phy_wr_stb            ),
@@ -371,8 +354,6 @@ sdio_data_control data_bus_interconnect(
   .o_data_phy_rd_data       (data_phy_rd_data           ),
   .i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
   .o_data_phy_com_rdy       (data_phy_com_rdy           ),
-  //.i_data_phy_activate      (data_phy_activate          ),
-  //.o_data_phy_finished      (data_phy_finished          ),
 
   //CIA Interface
   .o_cia_wr_stb             (cia_wr_stb                 ),
@@ -382,7 +363,6 @@ sdio_data_control data_bus_interconnect(
   .o_cia_hst_rdy            (cia_hst_rdy                ),
   .i_cia_com_rdy            (cia_com_rdy                ),
   .o_cia_activate           (cia_activate               ),
-  //.i_cia_finished           (cia_finished               ),
 
   //Function Interface
   .o_func1_wr_stb           (o_func1_wr_stb             ),
@@ -392,7 +372,6 @@ sdio_data_control data_bus_interconnect(
   .o_func1_hst_rdy          (o_func1_hst_rdy            ),
   .i_func1_com_rdy          (i_func1_com_rdy            ),
   .o_func1_activate         (func1_activate             ),
-  //.i_func1_finished         (func1_finished             ),
 
 
   //Function Interface
@@ -403,7 +382,6 @@ sdio_data_control data_bus_interconnect(
   .o_func2_hst_rdy          (o_func2_hst_rdy            ),
   .i_func2_com_rdy          (i_func2_com_rdy            ),
   .o_func2_activate         (o_func2_activate           ),
-  //.i_func2_finished         (i_func2_finished           ),
 
   //Function Interface
   .o_func3_wr_stb           (o_func3_wr_stb             ),
@@ -413,7 +391,6 @@ sdio_data_control data_bus_interconnect(
   .o_func3_hst_rdy          (o_func3_hst_rdy            ),
   .i_func3_com_rdy          (i_func3_com_rdy            ),
   .o_func3_activate         (o_func3_activate           ),
-  //.i_func3_finished         (i_func3_finished           ),
 
   //Function Interface
   .o_func4_wr_stb           (o_func4_wr_stb             ),
@@ -423,7 +400,6 @@ sdio_data_control data_bus_interconnect(
   .o_func4_hst_rdy          (o_func4_hst_rdy            ),
   .i_func4_com_rdy          (i_func4_com_rdy            ),
   .o_func4_activate         (o_func4_activate           ),
-  //.i_func4_finished         (i_func4_finished           ),
 
   //Function Interface
   .o_func5_wr_stb           (o_func5_wr_stb             ),
@@ -433,7 +409,6 @@ sdio_data_control data_bus_interconnect(
   .o_func5_hst_rdy          (o_func5_hst_rdy            ),
   .i_func5_com_rdy          (i_func5_com_rdy            ),
   .o_func5_activate         (o_func5_activate           ),
-  //.i_func5_finished         (i_func5_finished           ),
 
   //Function Interface
   .o_func6_wr_stb           (o_func6_wr_stb             ),
@@ -443,7 +418,6 @@ sdio_data_control data_bus_interconnect(
   .o_func6_hst_rdy          (o_func6_hst_rdy            ),
   .i_func6_com_rdy          (i_func6_com_rdy            ),
   .o_func6_activate         (o_func6_activate           ),
-  //.i_func6_finished         (i_func6_finished           ),
 
   //Function Interface
   .o_func7_wr_stb           (o_func7_wr_stb             ),
@@ -453,7 +427,6 @@ sdio_data_control data_bus_interconnect(
   .o_func7_hst_rdy          (o_func7_hst_rdy            ),
   .i_func7_com_rdy          (i_func7_com_rdy            ),
   .o_func7_activate         (o_func7_activate           ),
-  //.i_func7_finished         (i_func7_finished           ),
 
   //Memory Interface
   .o_mem_wr_stb             (o_mem_wr_stb               ),
@@ -463,7 +436,6 @@ sdio_data_control data_bus_interconnect(
   .o_mem_hst_rdy            (o_mem_hst_rdy              ),
   .i_mem_com_rdy            (i_mem_com_rdy              ),
   .o_mem_activate           (o_mem_activate             )
-  //.i_mem_finished           (i_mem_finished             )
 );
 
 
@@ -555,6 +527,7 @@ sdio_cia cia (
   .o_enable_async_interrupt (enable_async_interrupt     )
 );
 
+
 sdio_device_phy phy(
   .rst                      (rst                        ),
 
@@ -585,8 +558,8 @@ sdio_device_phy phy(
   .o_data_wr_data           (data_phy_wr_data           ),
   .i_data_rd_stb            (data_phy_rd_stb            ),
   .i_data_rd_data           (data_phy_rd_data           ),
-  .o_data_hst_rdy           (data_hst_rdy               ),
-  .i_data_com_rdy           (data_com_rdy               ),
+  .o_data_hst_rdy           (data_phy_hst_rdy           ),
+  .i_data_com_rdy           (data_phy_com_rdy           ),
 
   //FPGA Interface
   .i_sdio_clk               (sdio_clk                   ),
