@@ -26,6 +26,7 @@ not the 7th bit... this also means that within the verilog implementation the
 output will happen once clock cycle earlier... it may not but just be aware
 of this
 """
+
 def crc16_gen(data_array):
     regval = 0
     index = 0
@@ -73,8 +74,14 @@ def main(argv):
     data = Array('H')
     for i in range (256):
         data.append(0xFFFF)
-
     value = crc16_gen(data) 
+
+    data = Array('H')
+    data.append(0x3333)
+    #data.append(0x0055)
+    value = crc16_gen(data) 
+
+
 
 if __name__ == "__main__":
     main(sys.argv)
