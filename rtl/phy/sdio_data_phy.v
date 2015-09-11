@@ -87,7 +87,7 @@ integer                   i;
 //submodules
 genvar g;
 generate
-for (g = 0; g < 3; g = g + 1) begin : data_crc
+for (g = 0; g < 4; g = g + 1) begin : data_crc
 crc16 crc (
   .clk                (clk_2x                       ),
   .rst                (crc_rst                      ),

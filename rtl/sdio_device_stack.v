@@ -47,6 +47,7 @@ SOFTWARE.
 module sdio_device_stack (
 
   input                     sdio_clk,
+  input                     sdio_clk_x2,
   input                     rst,
 
   output                    o_mem_en,
@@ -563,6 +564,7 @@ sdio_device_phy phy(
 
   //FPGA Interface
   .i_sdio_clk               (sdio_clk                   ),
+  .i_sdio_clk_x2            (sdio_clk_x2                ),
 
   .o_sdio_cmd_dir           (o_sd_cmd_dir               ),
   .i_sdio_cmd_in            (i_sd_cmd_in                ),
