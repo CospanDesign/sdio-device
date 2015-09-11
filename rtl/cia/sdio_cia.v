@@ -54,7 +54,6 @@ module sdio_cia (
   output  reg               o_data_stb,  //If reading, this strobes a new piece of data in, if writing strobes data out
 
   //FBR Interface
-
   output                    o_fbr1_csa_en,
   output        [3:0]       o_fbr1_pwr_mode,
   output        [15:0]      o_fbr1_block_size,

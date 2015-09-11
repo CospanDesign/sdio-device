@@ -27,7 +27,7 @@ module sdio_device_phy (
   //XXX: Need to hook this up
   input               i_read_wait,
 
-  input               i_activate,
+  input               i_data_activate,
   input               i_write_flag,
   input       [9:0]   i_data_count,
 
@@ -76,37 +76,37 @@ reg   [39:0]          lcl_rsps;
 
 //Submodules
 crc7 crc_gen (
-  .clk               (i_sdio_clk      ),
-  .rst               (crc_rst         ),
-  .bit               (crc_bit         ),
-  .crc               (crc             ),
-  .en                (crc_en          )
+  .clk                (i_sdio_clk      ),
+  .rst                (crc_rst         ),
+  .bit                (crc_bit         ),
+  .crc                (crc             ),
+  .en                 (crc_en          )
 );
 
 sdio_data_phy data_phy(
-  .clk               (i_sdio_clk      ),
-  .clk_x2            (i_sdio_clk_x2   ),
-  .rst               (rst             ),
+  .clk                (i_sdio_clk      ),
+  .clk_x2             (i_sdio_clk_x2   ),
+  .rst                (rst             ),
+                      
+  .i_ddr_en           (i_ddr_en        ),
+  .i_spi_phy          (i_spi_phy       ),
+  .i_sd1_phy          (i_sd1_phy       ),
+  .i_sd4_phy          (i_sd4_phy       ),
 
-  .i_ddr_en          (i_ddr_en        ),
-  .i_spi_phy         (i_spi_phy       ),
-  .i_sd1_phy         (i_sd1_phy       ),
-  .i_sd4_phy         (i_sd4_phy       ),
-
-  .i_activate        (i_activate      ),
-  .i_write_flag      (i_write_flag    ),
-  .i_data_count      (i_data_count    ),
-
-  .o_data_wr_stb     (o_data_wr_stb   ),
-  .o_data_wr_data    (o_data_wr_data  ),
-  .i_data_rd_stb     (i_data_rd_stb   ),
-  .i_data_rd_data    (i_data_rd_data  ),
-  .o_data_hst_rdy    (o_data_hst_rdy  ),
-  .i_data_com_rdy    (i_data_com_rdy  ),
-
-  .o_sdio_data_dir   (o_sdio_data_dir ),
-  .i_sdio_data_in    (i_sdio_data_in  ),
-  .o_sdio_data_out   (o_sdio_data_out )
+  .i_activate         (i_data_activate ),
+  .i_write_flag       (i_write_flag    ),
+  .i_data_count       (i_data_count    ),
+                      
+  .o_data_wr_stb      (o_data_wr_stb   ),
+  .o_data_wr_data     (o_data_wr_data  ),
+  .i_data_rd_stb      (i_data_rd_stb   ),
+  .i_data_rd_data     (i_data_rd_data  ),
+  .o_data_hst_rdy     (o_data_hst_rdy  ),
+  .i_data_com_rdy     (i_data_com_rdy  ),
+                      
+  .o_sdio_data_dir    (o_sdio_data_dir ),
+  .i_sdio_data_in     (i_sdio_data_in  ),
+  .o_sdio_data_out    (o_sdio_data_out )
 );
 
 

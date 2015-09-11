@@ -355,6 +355,7 @@ sdio_data_control data_bus_interconnect(
   .o_data_phy_rd_data       (data_phy_rd_data           ),
   .i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
   .o_data_phy_com_rdy       (data_phy_com_rdy           ),
+  .o_data_phy_activate      (data_phy_activate          ), /* DATA CNTRL -> DATA PHY: tell the phy that it should be ready */
 
   //CIA Interface
   .o_cia_wr_stb             (cia_wr_stb                 ),
@@ -552,9 +553,11 @@ sdio_device_phy phy(
 
   .i_interrupt              (interrupt                  ),/* Interrupt */
   .i_read_wait              (read_wait                  ),/* SDIO Device is busy working on generated a read */
-
+  .i_data_count             (cmd_data_cnt               ),/* CMD -> PHY: Number of bytes to read/write */
 
   //Data Interface
+  .i_data_activate          (data_phy_activate          ),
+
   .o_data_wr_stb            (data_phy_wr_stb            ),
   .o_data_wr_data           (data_phy_wr_data           ),
   .i_data_rd_stb            (data_phy_rd_stb            ),
