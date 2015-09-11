@@ -59,8 +59,8 @@ module sdio_data_control (
   input           [7:0]     i_data_phy_wr_data,
   output                    o_data_phy_rd_stb,
   output          [7:0]     o_data_phy_rd_data,
-  input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
-  output                    o_data_phy_com_rdy,
+  //input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
+  //output                    o_data_phy_com_rdy,
   output                    o_data_phy_activate,
 
   //CIA Interface

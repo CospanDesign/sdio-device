@@ -192,6 +192,8 @@ always @ (posedge clk) begin
             if (i_sdio_data_in[0] == 0) begin
               state           <=  WRITE;
             end
+            else begin
+            end
           end
           else begin
             if (i_data_com_rdy && i_sdio_data_in[2]) begin
