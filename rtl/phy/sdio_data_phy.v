@@ -28,6 +28,8 @@ SOFTWARE.
  * Changes:
  */
 
+`define CRC_COUNT 8
+
 module sdio_data_phy (
   input                   clk,
   input                   clk_x2,
@@ -50,6 +52,8 @@ module sdio_data_phy (
   input           [7:0]   i_data_rd_data,
   output  reg             o_data_hst_rdy, //Host May not be ready
   input                   i_data_com_rdy,
+
+  output                  o_data_crc_good,
 
   //FPGA Platform Interface
   output  reg             o_sdio_data_dir,
@@ -78,13 +82,20 @@ reg                       edge_toggle;
 reg               [3:0]   crc_bit;
 wire              [15:0]  crc_out [0:3];
 reg                       crc_rst;
+reg               [15:0]  host_crc [0:3];
+wire              [15:0]  host_crc0;
+wire              [15:0]  host_crc1;
+wire              [15:0]  host_crc2;
+wire              [15:0]  host_crc3;
+
 wire                      sdio_data [0:3];
 wire                      sdio_data0;
 wire                      sdio_data1;
 wire                      sdio_data2;
 wire                      sdio_data3;
 
-wire                      capture_crc;
+//wire                      capture_crc;
+reg                       capture_crc;
 reg                       enable_crc;
 
 
@@ -98,6 +109,7 @@ wire              [15:0]  crc_out3;
 reg                       prev_clk_edge;
 wire                      posege_clk;
 
+
 integer                   i;
 //submodules
 genvar g;
@@ -107,6 +119,7 @@ crc16 crc (
   .clk                (clk_x2                       ),
   .rst                (crc_rst                      ),
   .en                 (enable_crc                   ),
+  //.en                 (capture_crc                  ),
   //.bit                (i_sdio_data_in[sdio_data[g]] ),
   .bit                (sdio_data[g]                 ),
   .crc                (crc_out[g]                   )
@@ -120,6 +133,11 @@ assign  crc_out0      = crc_out[0];
 assign  crc_out1      = crc_out[1];
 assign  crc_out2      = crc_out[2];
 assign  crc_out3      = crc_out[3];
+
+assign  host_crc0     = host_crc[0];
+assign  host_crc1     = host_crc[1];
+assign  host_crc2     = host_crc[2];
+assign  host_crc3     = host_crc[3];
 
 assign  sdio_data0    = sdio_data[0];
 assign  sdio_data1    = sdio_data[1];
@@ -141,8 +159,12 @@ assign  sdio_data[3]  = i_write_flag ?
 
 //assign  posedge_clk   = clk_x2 & !prev_clk_edge;
 //assign  edge_toggle   = !posedge_clk;
-assign  capture_crc   = ((state == READ) || (state == WRITE));
+//assign  capture_crc   = ((state == READ) || (state == WRITE));
 assign  o_data_wr_data = o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
+assign  o_data_crc_good = ( (host_crc[0] == crc_out[0]) &&
+                            (host_crc[1] == crc_out[1]) &&
+                            (host_crc[2] == crc_out[2]) &&
+                            (host_crc[3] == crc_out[3]));
 
 //synchronous logic
 always @ (posedge clk_x2) begin
@@ -163,8 +185,8 @@ always @ (posedge clk_x2) begin
       end
       PROCESS_CRC: begin
         //if (!capture_crc && !posedge_clk) begin
-        //if (!capture_crc && !posedge_clk) begin
-        if (!capture_crc) begin
+        if (!capture_crc && posedge_clk) begin
+        //if (!capture_crc) begin
           crc_state           <=  FINISHED;
           enable_crc          <=  0;
         end
@@ -202,12 +224,19 @@ always @ (posedge clk) begin
     data_count                <=  0;
     o_sdio_data_dir           <=  0;
     o_sdio_data_out           <=  0;
+    capture_crc               <=  0;
+    for (i = 0; i < 4; i = i + 1) begin
+      host_crc[i]             <=  0;
+    end
   end
   else begin
     case (state)
       IDLE: begin
         data_count            <=  0;
         o_sdio_data_dir       <=  0;
+        for (i = 0; i < 4; i = i + 1) begin
+          host_crc[i]         <=  0;
+        end
         if (i_activate) begin
           state               <=  START;
         end
@@ -227,6 +256,7 @@ always @ (posedge clk) begin
           //$display ("sdio_data_phy: SD4 Transaction Started!");
           if (i_write_flag) begin
             if (i_sdio_data_in[0] == 0) begin
+              capture_crc     <= 1;
               state           <=  WRITE;
             end
             else begin
@@ -244,16 +274,44 @@ always @ (posedge clk) begin
         //end
       end
       WRITE: begin
+        if (data_count == i_data_count - 1) begin
+          capture_crc           <= 0;
+        end
         if (data_count < i_data_count) begin
           data_count            <= data_count + 1;
         end
         else begin
-          state                 <=  CRC;
+          //capture_crc           <= 0;
+          state                 <= CRC;
+          data_count            <= 0;
+          
+          /*
+          data_count            <= 1;
+          for (i = 0; i < 4; i = i + 1) begin
+            host_crc[i]         <= {host_crc[i][13:0], i_sdio_data_in[7 - i], i_sdio_data_in[7 - i - 4]};
+          end
+          */
         end
       end
       READ: begin
       end
       CRC: begin
+        if (data_count < (`CRC_COUNT - 1)) begin
+          data_count            <=  data_count + 1;
+          host_crc[0]           <=  {host_crc[0][13:0], i_sdio_data_in[7], i_sdio_data_in[6]};
+          host_crc[1]           <=  {host_crc[1][13:0], i_sdio_data_in[5], i_sdio_data_in[4]};
+          host_crc[2]           <=  {host_crc[2][13:0], i_sdio_data_in[3], i_sdio_data_in[2]};
+          host_crc[3]           <=  {host_crc[3][13:0], i_sdio_data_in[1], i_sdio_data_in[0]};
+
+          /*
+          for (i = 0; i < 4; i = i + 1) begin
+            host_crc[i]         <= {host_crc[i][13:0], i_sdio_data_in[7 - (1 << i)], i_sdio_data_in[7 - ((1 << i) + 1)]};
+          end
+          */
+        end
+        else begin
+          state                 <=  FINISHED;
+        end
       end
       FINISHED: begin
         o_sdio_data_dir   <=  0;

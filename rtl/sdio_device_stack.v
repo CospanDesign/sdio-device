@@ -553,7 +553,7 @@ sdio_device_phy phy(
 
   .i_interrupt              (interrupt                  ),/* Interrupt */
   .i_read_wait              (read_wait                  ),/* SDIO Device is busy working on generated a read */
-  .i_data_count             (cmd_data_cnt               ),/* CMD -> PHY: Number of bytes to read/write */
+  .i_data_count             (o_func_data_count          ),/* CMD -> PHY: Number of bytes to read/write */
 
   //Data Interface
   .i_data_activate          (data_phy_activate          ),

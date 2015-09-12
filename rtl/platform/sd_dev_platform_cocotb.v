@@ -78,10 +78,10 @@ assign  data_out      = posedge_clk ?   { i_sd_data_out[7],
                                           i_sd_data_out[2],
                                           i_sd_data_out[1],
                                           i_sd_data_out[0]};
-assign  in_remap      =                 { io_phy_sd_data[0],
-                                          io_phy_sd_data[1],
+assign  in_remap      =                 { io_phy_sd_data[3],
                                           io_phy_sd_data[2],
-                                          io_phy_sd_data[3]};
+                                          io_phy_sd_data[1],
+                                          io_phy_sd_data[0]};
 
 
 always @ (posedge clk) begin
