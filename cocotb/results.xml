@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<testsuites name="results">
-  <testsuite name="all" package="all" tests="0">
-    <testcase classname="test_dut" name="first_test" time="0.0065479278564453125">
-      <failure stderr="" stdout="'tb_cocotb contains no object named ih_reset'" />
-    </testcase>
-  </testsuite>
-</testsuites>

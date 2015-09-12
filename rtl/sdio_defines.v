@@ -94,11 +94,11 @@
 
 //Extended
 `define CMD53_ARG_RW_FLAG           31
-`define CMD53_ARG_FNUM              30:27
-`define CMD53_ARG_BLOCK_MODE        26
-`define CMD53_ARG_INC_ADDR          25
-`define CMD53_ARG_REG_ADDR          24:8
-`define CMD53_ARG_DATA_COUNT        7:0
+`define CMD53_ARG_FNUM              30:28
+`define CMD53_ARG_BLOCK_MODE        27
+`define CMD53_ARG_INC_ADDR          26
+`define CMD53_ARG_REG_ADDR          25:9
+`define CMD53_ARG_DATA_COUNT        8:0
 
 
 //COMMAND SEL DESEL CARD

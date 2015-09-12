@@ -72,12 +72,27 @@ reg               [3:0]   state;
 reg               [3:0]   crc_state;
 
 reg               [9:0]   data_count;
-wire                      edge_toggle;
+//wire                      edge_toggle;
+reg                       posedge_clk;
+reg                       edge_toggle;
+reg               [3:0]   crc_bit;
 wire              [15:0]  crc_out [0:3];
 reg                       crc_rst;
 wire                      sdio_data [0:3];
+wire                      sdio_data0;
+wire                      sdio_data1;
+wire                      sdio_data2;
+wire                      sdio_data3;
+
 wire                      capture_crc;
 reg                       enable_crc;
+
+
+wire              [15:0]  crc_out0;
+wire              [15:0]  crc_out1;
+wire              [15:0]  crc_out2;
+wire              [15:0]  crc_out3;
+
 
 
 reg                       prev_clk_edge;
@@ -89,10 +104,11 @@ genvar g;
 generate
 for (g = 0; g < 4; g = g + 1) begin : data_crc
 crc16 crc (
-  .clk                (clk_2x                       ),
+  .clk                (clk_x2                       ),
   .rst                (crc_rst                      ),
   .en                 (enable_crc                   ),
-  .bit                (i_sdio_data_in[sdio_data[g]] ),
+  //.bit                (i_sdio_data_in[sdio_data[g]] ),
+  .bit                (sdio_data[g]                 ),
   .crc                (crc_out[g]                   )
 );
 end
@@ -100,6 +116,16 @@ endgenerate
 
 
 //asynchronous logic
+assign  crc_out0      = crc_out[0];
+assign  crc_out1      = crc_out[1];
+assign  crc_out2      = crc_out[2];
+assign  crc_out3      = crc_out[3];
+
+assign  sdio_data0    = sdio_data[0];
+assign  sdio_data1    = sdio_data[1];
+assign  sdio_data2    = sdio_data[2];
+assign  sdio_data3    = sdio_data[3];
+
 assign  sdio_data[0]  = i_write_flag ?
                           edge_toggle ? i_sdio_data_in [4'h4] : i_sdio_data_in [4'h0]:
                           edge_toggle ? o_sdio_data_out[4'h4] : o_sdio_data_out[4'h0];
@@ -113,8 +139,8 @@ assign  sdio_data[3]  = i_write_flag ?
                           edge_toggle ? i_sdio_data_in [4'h7] : i_sdio_data_in [4'h3]:
                           edge_toggle ? o_sdio_data_out[4'h7] : o_sdio_data_out[4'h3];
 
-assign  posedge_clk   = clk_x2 & !prev_clk_edge;
-assign  edge_toggle   = !posedge_clk;
+//assign  posedge_clk   = clk_x2 & !prev_clk_edge;
+//assign  edge_toggle   = !posedge_clk;
 assign  capture_crc   = ((state == READ) || (state == WRITE));
 assign  o_data_wr_data = o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
 
@@ -131,13 +157,15 @@ always @ (posedge clk_x2) begin
         crc_rst               <=  1;
         if (capture_crc && posedge_clk) begin
           crc_rst             <=  0;
-          state               <=  PROCESS_CRC;
+          crc_state           <=  PROCESS_CRC;
           enable_crc          <=  1;
         end
       end
       PROCESS_CRC: begin
-        if (!capture_crc && !posedge_clk) begin
-          state               <=  FINISHED;
+        //if (!capture_crc && !posedge_clk) begin
+        //if (!capture_crc && !posedge_clk) begin
+        if (!capture_crc) begin
+          crc_state           <=  FINISHED;
           enable_crc          <=  0;
         end
       end
@@ -152,16 +180,23 @@ end
 
 always @ (posedge clk_x2) begin
   if (rst) begin
-    prev_clk_edge             <=  0;
+    edge_toggle               <=  0;
   end
   else begin
-    prev_clk_edge             <=  clk;
+    if (clk) begin
+      posedge_clk             <=  1;
+      edge_toggle             <=  1;
+    end
+    else begin
+      posedge_clk             <=  0;
+      edge_toggle             <=  0;
+    end
   end
 end
 
 always @ (posedge clk) begin
   o_data_wr_stb               <=  0;
-  if (rst) begin              
+  if (rst) begin
     state                     <=  IDLE;
     o_data_hst_rdy            <=  0;
     data_count                <=  0;
@@ -178,16 +213,18 @@ always @ (posedge clk) begin
         end
       end
       START: begin
+        /*
         if (i_spi_phy) begin
           $display ("sdio_data_phy: SPI Mode not supported yet !");
           state               <=  FINISHED;
         end
         else if (i_sd1_phy) begin
-          $display ("sdio_data_phy: SD1 Mode not supported yet!"); 
+          $display ("sdio_data_phy: SD1 Mode not supported yet!");
           state               <=  FINISHED;
         end
         else begin
-          $display ("sdio_data_phy: SD4 Transaction Started!");
+        */
+          //$display ("sdio_data_phy: SD4 Transaction Started!");
           if (i_write_flag) begin
             if (i_sdio_data_in[0] == 0) begin
               state           <=  WRITE;
@@ -204,9 +241,15 @@ always @ (posedge clk) begin
               state             <=  READ;
             end
           end
-        end
+        //end
       end
       WRITE: begin
+        if (data_count < i_data_count) begin
+          data_count            <= data_count + 1;
+        end
+        else begin
+          state                 <=  CRC;
+        end
       end
       READ: begin
       end
@@ -214,13 +257,14 @@ always @ (posedge clk) begin
       end
       FINISHED: begin
         o_sdio_data_dir   <=  0;
-        if (!i_activate) begin
-          state           <= IDLE;
-        end
       end
       default: begin
       end
     endcase
+
+    if (!i_activate) begin
+      state               <=  IDLE;
+    end
   end
 end
 

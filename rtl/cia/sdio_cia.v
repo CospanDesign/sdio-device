@@ -286,10 +286,6 @@ assign  o_fbr1_block_size             = 16'h0000;
 end
 endgenerate
 
-
-
-
-
 generate
 if (`FUNC2_EN) begin
 sdio_fbr #(
@@ -680,19 +676,24 @@ always @ (posedge clk) begin
       WRITE_START: begin
         //Need one clock cycle to get things going with block RAM, this
         //  Doesn't hurt anything with the non block RAM interfaces
-        data_count      <=  data_count + 1;
+        //data_count      <=  data_count + 1;
         o_ready         <=  1;
-        if (data_count + 1 >= i_data_count) begin
-          state         <=  FINISHED;
-        end
-        else begin
+        //if (data_count + 1 >= i_data_count) begin
+        //  state         <=  FINISHED;
+        //end
+        //else begin
           state         <= WRITE;
-        end
+        //end
       end
       WRITE: begin
-        data_count      <=  data_count + 1;
-        if (data_count + 1 >= i_data_count) begin
+        if (data_count < i_data_count) begin
+          if (i_data_stb) begin
+            data_count    <=  data_count + 1;
+          end
+        end
+        else begin
           state         <=  FINISHED;
+          o_ready       <=  0;
         end
       end
       READ_START: begin

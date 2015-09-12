@@ -58,19 +58,39 @@ module crc16 #(
 //local parameters
 //registes/wires
 
+wire         inv;
 //submodules
 //asynchronous logic
+assign inv = bit ^ crc[15];  // XOR required?
 //synchronous logic
 //XXX: Does this need to be asynchronous?
 
 always @ (posedge clk) begin
   if (rst) begin
-    crc  <=  SEED;
+    //crc  <=  SEED;
+    crc  <=  0;
   end
   else begin
     //Shift the output value
-    if (en)
-      crc <=  bit ? ({crc[14:0], 1'b0} ^ POLYNOMIAL) : {crc[14:0], 1'b0};
+    if (en) begin
+      //crc <=  bit ? ({crc[14:0], 1'b0} ^ POLYNOMIAL) : {crc[14:0], 1'b0};
+      crc[15] = crc[14];
+      crc[14] = crc[13];
+      crc[13] = crc[12];
+      crc[12] = crc[11] ^ inv;
+      crc[11] = crc[10];
+      crc[10] = crc[9];
+      crc[9]  = crc[8];
+      crc[8]  = crc[7];
+      crc[7]  = crc[6];
+      crc[6]  = crc[5];
+      crc[5]  = crc[4] ^ inv;
+      crc[4]  = crc[3];
+      crc[3]  = crc[2];
+      crc[2]  = crc[1];
+      crc[1]  = crc[0];
+      crc[0]  = inv;
+    end
   end
 end
 
