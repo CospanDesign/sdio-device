@@ -53,7 +53,7 @@ module sdio_data_phy (
   output  reg             o_data_hst_rdy, //Host May not be ready
   input                   i_data_com_rdy,
 
-  output                  o_data_crc_good,
+  output  reg             o_data_crc_good,
 
   //FPGA Platform Interface
   output  reg             o_sdio_data_dir,
@@ -76,6 +76,7 @@ reg               [3:0]   state;
 reg               [3:0]   crc_state;
 
 reg               [9:0]   data_count;
+wire                      data_crc_good;
 //wire                      edge_toggle;
 reg                       posedge_clk;
 reg                       edge_toggle;
@@ -145,23 +146,23 @@ assign  sdio_data2    = sdio_data[2];
 assign  sdio_data3    = sdio_data[3];
 
 assign  sdio_data[0]  = i_write_flag ?
-                          edge_toggle ? i_sdio_data_in [4'h4] : i_sdio_data_in [4'h0]:
-                          edge_toggle ? o_sdio_data_out[4'h4] : o_sdio_data_out[4'h0];
-assign  sdio_data[1]  = i_write_flag ?
-                          edge_toggle ? i_sdio_data_in [4'h5] : i_sdio_data_in [4'h1]:
-                          edge_toggle ? o_sdio_data_out[4'h5] : o_sdio_data_out[4'h1];
-assign  sdio_data[2]  = i_write_flag ?
-                          edge_toggle ? i_sdio_data_in [4'h6] : i_sdio_data_in [4'h2]:
-                          edge_toggle ? o_sdio_data_out[4'h6] : o_sdio_data_out[4'h2];
-assign  sdio_data[3]  = i_write_flag ?
                           edge_toggle ? i_sdio_data_in [4'h7] : i_sdio_data_in [4'h3]:
                           edge_toggle ? o_sdio_data_out[4'h7] : o_sdio_data_out[4'h3];
+assign  sdio_data[1]  = i_write_flag ?
+                          edge_toggle ? i_sdio_data_in [4'h6] : i_sdio_data_in [4'h2]:
+                          edge_toggle ? o_sdio_data_out[4'h6] : o_sdio_data_out[4'h2];
+assign  sdio_data[2]  = i_write_flag ?
+                          edge_toggle ? i_sdio_data_in [4'h5] : i_sdio_data_in [4'h1]:
+                          edge_toggle ? o_sdio_data_out[4'h5] : o_sdio_data_out[4'h1];
+assign  sdio_data[3]  = i_write_flag ?
+                          edge_toggle ? i_sdio_data_in [4'h4] : i_sdio_data_in [4'h0]:
+                          edge_toggle ? o_sdio_data_out[4'h4] : o_sdio_data_out[4'h0];
 
 //assign  posedge_clk   = clk_x2 & !prev_clk_edge;
 //assign  edge_toggle   = !posedge_clk;
 //assign  capture_crc   = ((state == READ) || (state == WRITE));
 assign  o_data_wr_data = o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
-assign  o_data_crc_good = ( (host_crc[0] == crc_out[0]) &&
+assign  data_crc_good  =  ( (host_crc[0] == crc_out[0]) &&
                             (host_crc[1] == crc_out[1]) &&
                             (host_crc[2] == crc_out[2]) &&
                             (host_crc[3] == crc_out[3]));
@@ -219,6 +220,7 @@ end
 always @ (posedge clk) begin
   o_data_wr_stb               <=  0;
   if (rst) begin
+    o_data_crc_good           <=  0;
     state                     <=  IDLE;
     o_data_hst_rdy            <=  0;
     data_count                <=  0;
@@ -234,11 +236,14 @@ always @ (posedge clk) begin
       IDLE: begin
         data_count            <=  0;
         o_sdio_data_dir       <=  0;
-        for (i = 0; i < 4; i = i + 1) begin
-          host_crc[i]         <=  0;
-        end
+        o_data_hst_rdy        <=  0;
         if (i_activate) begin
+          o_data_crc_good     <=  0;
+          for (i = 0; i < 4; i = i + 1) begin
+            host_crc[i]       <=  0;
+          end
           state               <=  START;
+          o_data_hst_rdy      <=  1;
         end
       end
       START: begin
@@ -272,8 +277,15 @@ always @ (posedge clk) begin
             end
           end
         //end
+        //Cancel a Transaction
+        if (!i_activate) begin
+          state               <=  IDLE;
+        end
+
+
       end
       WRITE: begin
+        o_data_wr_stb           <=  1;
         if (data_count == i_data_count - 1) begin
           capture_crc           <= 0;
         end
@@ -281,33 +293,34 @@ always @ (posedge clk) begin
           data_count            <= data_count + 1;
         end
         else begin
+          o_data_wr_stb         <=  0;
           //capture_crc           <= 0;
           state                 <= CRC;
           data_count            <= 0;
-          
-          /*
-          data_count            <= 1;
-          for (i = 0; i < 4; i = i + 1) begin
-            host_crc[i]         <= {host_crc[i][13:0], i_sdio_data_in[7 - i], i_sdio_data_in[7 - i - 4]};
-          end
-          */
+          //data_count            <=  data_count + 1;
+          host_crc[0]           <=  {host_crc[0][13:0], i_sdio_data_in[7], i_sdio_data_in[3]};
+          host_crc[1]           <=  {host_crc[1][13:0], i_sdio_data_in[6], i_sdio_data_in[2]};
+          host_crc[2]           <=  {host_crc[2][13:0], i_sdio_data_in[5], i_sdio_data_in[1]};
+          host_crc[3]           <=  {host_crc[3][13:0], i_sdio_data_in[4], i_sdio_data_in[0]};
+        end
+        //Cancel a Transaction
+        if (!i_activate) begin
+          state               <=  IDLE;
         end
       end
       READ: begin
+        //Cancel a Transaction
+        if (!i_activate) begin
+          state               <=  IDLE;
+        end
       end
       CRC: begin
         if (data_count < (`CRC_COUNT - 1)) begin
           data_count            <=  data_count + 1;
-          host_crc[0]           <=  {host_crc[0][13:0], i_sdio_data_in[7], i_sdio_data_in[6]};
-          host_crc[1]           <=  {host_crc[1][13:0], i_sdio_data_in[5], i_sdio_data_in[4]};
-          host_crc[2]           <=  {host_crc[2][13:0], i_sdio_data_in[3], i_sdio_data_in[2]};
-          host_crc[3]           <=  {host_crc[3][13:0], i_sdio_data_in[1], i_sdio_data_in[0]};
-
-          /*
-          for (i = 0; i < 4; i = i + 1) begin
-            host_crc[i]         <= {host_crc[i][13:0], i_sdio_data_in[7 - (1 << i)], i_sdio_data_in[7 - ((1 << i) + 1)]};
-          end
-          */
+          host_crc[0]           <=  {host_crc[0][13:0], i_sdio_data_in[7], i_sdio_data_in[3]};
+          host_crc[1]           <=  {host_crc[1][13:0], i_sdio_data_in[6], i_sdio_data_in[2]};
+          host_crc[2]           <=  {host_crc[2][13:0], i_sdio_data_in[5], i_sdio_data_in[1]};
+          host_crc[3]           <=  {host_crc[3][13:0], i_sdio_data_in[4], i_sdio_data_in[0]};
         end
         else begin
           state                 <=  FINISHED;
@@ -315,14 +328,17 @@ always @ (posedge clk) begin
       end
       FINISHED: begin
         o_sdio_data_dir   <=  0;
+        o_data_crc_good   <=  data_crc_good;
+        if (!i_activate) begin
+          state               <=  IDLE;
+        end
       end
       default: begin
+        if (!i_activate) begin
+          state               <=  IDLE;
+        end
       end
     endcase
-
-    if (!i_activate) begin
-      state               <=  IDLE;
-    end
   end
 end
 
