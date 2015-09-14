@@ -77,8 +77,10 @@ def main(argv):
     value = crc16_gen(data) 
 
     data = Array('H')
-    data.append(0x3333)
-    #data.append(0x0055)
+    #data.append(0x3333)
+
+    #data.append(0x8000)
+    #data.append(0x5000)
     value = crc16_gen(data) 
 
 
