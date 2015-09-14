@@ -82,7 +82,8 @@ module sdio_card_control (
   output  reg               o_rsps_stb,
   output        [39:0]      o_rsps,
   output        [7:0]       o_rsps_len,
-  output  reg               o_rsps_fail
+  output  reg               o_rsps_fail,
+  input                     i_rsps_idle
 );
 
 //local parameters
@@ -404,7 +405,9 @@ always @ (posedge sdio_clk) begin
         end
       end
       TRANSFER: begin
-        o_func_activate             <= 1;
+        if (i_rsps_idle) begin
+          o_func_activate           <= 1;
+        end
         //Not command bus read/write
         if (i_func_finished) begin
           o_func_activate           <= 0;

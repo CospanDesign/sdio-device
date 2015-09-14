@@ -21,6 +21,7 @@ module sdio_device_phy (
   input       [39:0]  i_rsps,
   input       [7:0]   i_rsps_len,
   input               i_rsps_fail,
+  output  reg         o_rsps_idle,
 
   //XXX: Need to hook this up
   input               i_interrupt,
@@ -123,6 +124,7 @@ always @ (posedge i_sdio_clk) begin
     bit_count         <=  0;
     txrx_dir          <=  0;
     state             <=  IDLE;
+    o_rsps_idle       <=  0;
 
     o_cmd_stb         <=  0;
     o_cmd             <=  0;
@@ -151,12 +153,14 @@ always @ (posedge i_sdio_clk) begin
     end
     case (state)
       IDLE: begin
+        o_rsps_idle     <=  1;
         o_sdio_cmd_out  <=  1;
         o_sdio_cmd_dir  <=  0;
         crc_en          <=  0;
         crc_rst         <=  0;
         //Detect beginning of transaction when the command line goes low
         if (!i_sdio_cmd_in) begin
+          o_rsps_idle   <=  0;
           crc_en        <=  1;
           //New Command Detected
           state         <=  READ_COMMAND;
