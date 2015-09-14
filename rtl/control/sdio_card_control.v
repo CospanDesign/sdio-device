@@ -196,7 +196,8 @@ always @ (posedge sdio_clk) begin
         response_value[`R4_MEM_PRESENT]       <=  `MEM_PRESENT;
         response_value[`R4_UHSII_AVAILABLE]   <=  `UHSII_AVAILABLE;
         response_value[`R4_S18A]              <=  v1p8_sel;
-        response_value[`R4_IO_OCR]            <=  voltage_select;
+        //response_value[`R4_IO_OCR]            <=  voltage_select;
+        response_value[`R4_IO_OCR]            <=  `OCR_VALUE;
         //response_value[7:0]                   <=  8'h00;
       end
       R5: begin
@@ -367,6 +368,7 @@ always @ (posedge sdio_clk) begin
               cmd_data              <= 0;
             end
             `SD_CMD_IO_RW_EXTENDED: begin
+              $display("SD CMD IO RW Extended");
               o_func_write_flag     <= i_cmd_arg[`CMD53_ARG_RW_FLAG   ];
               o_func_rd_after_wr    <= 0;
               o_func_num            <= i_cmd_arg[`CMD53_ARG_FNUM      ];

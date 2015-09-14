@@ -56,7 +56,7 @@ module sdio_device_stack (
   output          [7:0]     o_func_enable,          //Bitmask Function Enable
   input           [7:0]     i_func_ready,           //Bitmask Function is Ready
   output          [2:0]     o_func_abort,
-  output          [7:0]     o_func_int_en,
+  output          [7:0]     o_func_int_enable,
   input           [7:0]     i_func_int_pending,
   input           [7:0]     i_func_exec_status,
 
@@ -250,7 +250,6 @@ wire                driver_type_d;
 wire                enable_async_interrupt;
 
 
-wire        [7:0]   o_func_enable;
 wire        [7:0]   i_func_ready;
 wire        [7:0]   o_func_int_enable;
 wire        [7:0]   i_func_int_pending;
@@ -354,7 +353,7 @@ sdio_data_control data_bus_interconnect(
   .o_data_phy_rd_stb        (data_phy_rd_stb            ),
   .o_data_phy_rd_data       (data_phy_rd_data           ),
   //.i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
-  //.o_data_phy_com_rdy       (data_phy_com_rdy           ),
+  .o_data_phy_com_rdy       (data_phy_com_rdy           ),
   .o_data_phy_activate      (data_phy_activate          ), /* DATA CNTRL -> DATA PHY: tell the phy that it should be ready */
 
   //CIA Interface
@@ -564,7 +563,7 @@ sdio_device_phy phy(
   .i_data_rd_stb            (data_phy_rd_stb            ),
   .i_data_rd_data           (data_phy_rd_data           ),
   //.o_data_hst_rdy           (data_phy_hst_rdy           ),
-  //.i_data_com_rdy           (data_phy_com_rdy           ),
+  .i_data_com_rdy           (data_phy_com_rdy           ),
 
   //FPGA Interface
   .i_sdio_clk               (sdio_clk                   ),

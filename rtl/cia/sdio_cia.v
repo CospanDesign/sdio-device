@@ -175,9 +175,11 @@ module sdio_cia (
 localparam                      IDLE        = 4'h0;
 localparam                      WRITE_START = 4'h1;
 localparam                      WRITE       = 4'h2;
-localparam                      READ_START  = 4'h3;
-localparam                      READ        = 4'h4;
-localparam                      FINISHED    = 4'h5;
+localparam                      READ_DELAY1 = 4'h3;
+localparam                      READ_DELAY2 = 4'h4;
+localparam                      READ_START  = 4'h5;
+localparam                      READ        = 4'h6;
+localparam                      FINISHED    = 4'h7;
 
 //Local Registers/Wires
 wire                            cia_i_activate[0:`NO_SELECT_INDEX + 1];
@@ -669,7 +671,8 @@ always @ (posedge clk) begin
             state       <=  WRITE_START;
           end
           else begin
-            state       <=  READ_START;
+            state       <=  READ_DELAY1;
+            o_ready     <=  1;
           end
         end
       end
@@ -696,17 +699,27 @@ always @ (posedge clk) begin
           o_ready       <=  0;
         end
       end
+      READ_DELAY1: begin
+        state           <=  READ_DELAY2;
+      end
+      READ_DELAY2: begin
+        state           <=  READ_START;
+      end
       READ_START: begin
-        data_count      <=  data_count + 1;
         o_data_stb      <=  1;
+        data_count      <=  1;
+        //data_count      <=  data_count + 1;
+        //o_data_stb      <=  1;
         state           <=  READ;
       end
       READ: begin
-        data_count      <=  data_count + 1;
-        if (data_count + 1 >= i_data_count) begin
+        if (data_count < i_data_count) begin
+          o_data_stb    <=  1;
+          data_count    <=  data_count + 1;
+        end
+        else begin
           state         <=  FINISHED;
         end
-        o_data_stb      <=  1;
       end
       FINISHED: begin
       o_finished        <=  1;

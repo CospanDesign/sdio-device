@@ -60,7 +60,7 @@ module sdio_data_control (
   output                    o_data_phy_rd_stb,
   output          [7:0]     o_data_phy_rd_data,
   //input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
-  //output                    o_data_phy_com_rdy,
+  output                    o_data_phy_com_rdy,
   output                    o_data_phy_activate,
 
   //CIA Interface
@@ -186,7 +186,7 @@ assign  o_cmd_rd_data       = i_cmd_bus_sel   ? rd_data       : 8'h00;
 
 assign  o_data_phy_rd_stb   = !i_cmd_bus_sel  ? rd_stb        : 1'b0;
 assign  o_data_phy_rd_data  = !i_cmd_bus_sel  ? rd_data       : 8'h00;
-assign  o_data_com_rdy      = !i_cmd_bus_sel  ? com_rdy       : 1'b0;
+assign  o_data_phy_com_rdy  = !i_cmd_bus_sel  ? com_rdy       : 1'b0;
 assign  o_data_phy_activate = !i_cmd_bus_sel  ? i_activate    : 1'b0;
 
 assign  wr_stb              = i_cmd_bus_sel   ? lcl_wr_stb    : i_data_phy_wr_stb;

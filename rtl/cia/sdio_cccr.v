@@ -174,6 +174,7 @@ always @ (posedge clk) begin
     bus_speed_select        <=  0;
     driver_type             <=  0;
     o_enable_async_interrupt<=  0;
+    o_enable_spi_interrupt  <=  0;
     bus_width               <=  0;
 
 

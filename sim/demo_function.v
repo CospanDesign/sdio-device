@@ -139,6 +139,7 @@ assign  count_finished      =   i_block_mode ?  (block_data_count >= i_data_coun
 assign  o_read_wait         =   (`SRW && i_request_read_wait);
 assign  o_interrupt_pending =   (i_interrupt_enable && i_request_interrupt);
 assign  o_interrupt         =   o_interrupt_pending;
+assign  o_ready             =   i_enable;
 
 //synchronous logic
 always @ (*) begin
