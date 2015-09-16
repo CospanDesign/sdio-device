@@ -57,6 +57,7 @@ reg           [3:0]   lock_count;
 wire          [7:0]   sd_data_in;
 reg           [3:0]   top_nibble;
 wire          [3:0]   in_remap;
+wire          [3:0]   out_remap;
 //Submodules
 //Asynchronous Logic
 
@@ -68,16 +69,18 @@ assign  io_phy_sd_cmd = i_sd_cmd_dir  ? i_sd_cmd_out : 1'hZ;
 assign  o_sd_cmd_in   = io_phy_sd_cmd;
 
 assign  io_phy_sd_data= i_sd_data_dir ? data_out: 8'hZ;
-
-
-assign  data_out      = posedge_clk ?   { i_sd_data_out[7],
-                                          i_sd_data_out[6],
-                                          i_sd_data_out[5],
-                                          i_sd_data_out[4]} :
-                                        { i_sd_data_out[3],
-                                          i_sd_data_out[2],
+assign  out_remap     = posedge_clk   ? { i_sd_data_out[0],
                                           i_sd_data_out[1],
-                                          i_sd_data_out[0]};
+                                          i_sd_data_out[2],
+                                          i_sd_data_out[3]} :
+                                        { i_sd_data_out[4],
+                                          i_sd_data_out[5],
+                                          i_sd_data_out[6],
+                                          i_sd_data_out[7]};
+
+
+assign  data_out      = out_remap;
+
 assign  in_remap      =                 { io_phy_sd_data[3],
                                           io_phy_sd_data[2],
                                           io_phy_sd_data[1],
