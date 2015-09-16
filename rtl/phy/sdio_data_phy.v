@@ -363,7 +363,7 @@ always @ (posedge clk) begin
         end
       end
       WRITE_CRC: begin
-        if (data_count < `CRC_COUNT - 1) begin
+        if (data_count < `CRC_COUNT) begin
           data_count            <=  data_count + 1;
           read_data             <=  {host_crc[0][15], host_crc[1][15], host_crc[2][15], host_crc[3][15],
                                      host_crc[0][14], host_crc[1][14], host_crc[2][14], host_crc[3][14]};
