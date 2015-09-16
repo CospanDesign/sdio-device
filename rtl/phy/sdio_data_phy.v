@@ -44,7 +44,7 @@ module sdio_data_phy (
   //Data Interface
   input                   i_activate,
   input                   i_write_flag,
-  input           [9:0]   i_data_count,
+  input           [12:0]  i_data_count,
 
   output  reg             o_data_wr_stb,
   output          [7:0]   o_data_wr_data,
@@ -76,7 +76,7 @@ localparam      PROCESS_CRC = 4'h1;
 reg               [3:0]   state;
 reg               [3:0]   crc_state;
 
-reg               [9:0]   data_count;
+reg               [12:0]  data_count;
 wire                      data_crc_good;
 reg                       posedge_clk;
 reg               [3:0]   crc_bit;

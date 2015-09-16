@@ -60,7 +60,7 @@ module sdio_card_control (
   output  reg               o_func_write_flag,      /* Read = 0, Write = 1 */
   output  reg               o_func_rd_after_wr,
   output  reg   [17:0]      o_func_addr,
-  output  reg   [8:0]       o_func_data_count,
+  output  reg   [12:0]      o_func_data_count,
 
   //Command Data Bus
   output  reg               o_cmd_bus_sel,
@@ -260,7 +260,7 @@ always @ (posedge sdio_clk) begin
     o_func_rd_after_wr              <=  0;
     o_func_addr                     <=  18'h0;
     o_func_write_data               <=  8'h00;
-    o_func_data_count               <=  8'h00;
+    o_func_data_count               <=  12'h00;
     data_count                      <=  0;
 
     response_index                  <=  0;
@@ -374,7 +374,7 @@ always @ (posedge sdio_clk) begin
               o_func_rd_after_wr    <= 0;
               o_func_num            <= i_cmd_arg[`CMD53_ARG_FNUM      ];
               o_func_addr           <= i_cmd_arg[`CMD53_ARG_REG_ADDR  ];
-              o_func_data_count     <= i_cmd_arg[`CMD53_ARG_DATA_COUNT];
+              o_func_data_count     <= {4'h0, i_cmd_arg[`CMD53_ARG_DATA_COUNT]};
               o_func_block_mode     <= i_cmd_arg[`CMD53_ARG_BLOCK_MODE];
               o_func_inc_addr       <= i_cmd_arg[`CMD53_ARG_INC_ADDR  ];
               rsps_stb              <= 1;

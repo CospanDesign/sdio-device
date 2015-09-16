@@ -30,7 +30,7 @@ module sdio_device_phy (
 
   input               i_data_activate,
   input               i_write_flag,
-  input       [9:0]   i_data_count,
+  input       [12:0]  i_data_count,
 
   output              o_data_wr_stb,
   output      [7:0]   o_data_wr_data,

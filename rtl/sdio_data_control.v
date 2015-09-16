@@ -36,8 +36,8 @@ module sdio_data_control (
 
   input                     i_write_flg,
   input                     i_block_mode_flg,
-  input           [8:0]     i_data_cnt,
-  output  reg     [9:0]     o_total_data_cnt,
+  input           [12:0]    i_data_cnt,
+  output  reg     [12:0]    o_total_data_cnt,
 
   input                     i_inc_addr_flg,
   input           [17:0]    i_cmd_address,

@@ -48,7 +48,7 @@ module sdio_cia (
   input                     i_inc_addr,
   input         [17:0]      i_address,
   input                     i_data_stb,
-  input         [9:0]       i_data_count,
+  input         [12:0]      i_data_count,
   input         [7:0]       i_data_in,
   output        [7:0]       o_data_out,
   output  reg               o_data_stb,  //If reading, this strobes a new piece of data in, if writing strobes data out
@@ -89,7 +89,7 @@ module sdio_cia (
   output                    o_fbr_addr_in,
   output        [17:0]      o_fbr_address,
   output                    o_fbr_data_stb,
-  output        [9:0]       o_fbr_data_count,
+  output        [12:0]      o_fbr_data_count,
   output        [7:0]       o_fbr_data_in,
 
   output                    o_fbr1_en,

@@ -167,7 +167,7 @@ module sdio_device_stack (
   output                    o_func_rd_after_wr,
   output                    o_func_inc_addr,
   output          [17:0]    o_func_addr,
-  output          [9:0]     o_func_data_count,
+  output          [12:0]    o_func_data_count,
 
   input           [7:0]     i_interrupt,
 
@@ -207,7 +207,7 @@ wire                cmd_crc_stb;
 wire        [5:0]   cmd;
 wire        [31:0]  cmd_arg;
 wire        [17:0]  cmd_addr;
-wire        [8:0]   cmd_data_cnt;
+wire        [12:0]  cmd_data_cnt;
 
 wire        [39:0]  rsps;
 wire        [7:0]   rsps_len;
