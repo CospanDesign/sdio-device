@@ -71,6 +71,7 @@ module sdio_data_control (
   output  reg               o_cia_hst_rdy,
   input                     i_cia_com_rdy,
   output  reg               o_cia_activate,
+  input           [15:0]    i_cia_block_size,
 
   //Function 1 Interface
   output  reg               o_func1_wr_stb,
@@ -80,6 +81,7 @@ module sdio_data_control (
   output  reg               o_func1_hst_rdy,
   input                     i_func1_com_rdy,
   output  reg               o_func1_activate,
+  input           [15:0]    i_func1_block_size,
 
   //Function 2 Interface
   output  reg               o_func2_wr_stb,
@@ -89,6 +91,7 @@ module sdio_data_control (
   output  reg               o_func2_hst_rdy,
   input                     i_func2_com_rdy,
   output  reg               o_func2_activate,
+  input           [15:0]    i_func2_block_size,
 
   //Function 3 Interface
   output  reg               o_func3_wr_stb,
@@ -98,6 +101,7 @@ module sdio_data_control (
   output  reg               o_func3_hst_rdy,
   input                     i_func3_com_rdy,
   output  reg               o_func3_activate,
+  input           [15:0]    i_func3_block_size,
 
   //Function 4 Interface
   output  reg               o_func4_wr_stb,
@@ -107,6 +111,7 @@ module sdio_data_control (
   output  reg               o_func4_hst_rdy,
   input                     i_func4_com_rdy,
   output  reg               o_func4_activate,
+  input           [15:0]    i_func4_block_size,
 
   //Function 5 Interface
   output  reg               o_func5_wr_stb,
@@ -116,6 +121,7 @@ module sdio_data_control (
   output  reg               o_func5_hst_rdy,
   input                     i_func5_com_rdy,
   output  reg               o_func5_activate,
+  input           [15:0]    i_func5_block_size,
 
   //Function 6 Interface
   output  reg               o_func6_wr_stb,
@@ -125,6 +131,7 @@ module sdio_data_control (
   output  reg               o_func6_hst_rdy,
   input                     i_func6_com_rdy,
   output  reg               o_func6_activate,
+  input           [15:0]    i_func6_block_size,
 
   //Function 7 Interface
   output  reg               o_func7_wr_stb,
@@ -134,6 +141,7 @@ module sdio_data_control (
   output  reg               o_func7_hst_rdy,
   input                     i_func7_com_rdy,
   output  reg               o_func7_activate,
+  input           [15:0]    i_func7_block_size,
 
   //Memory Interface
   output  reg               o_mem_wr_stb,
@@ -142,8 +150,8 @@ module sdio_data_control (
   input           [7:0]     i_mem_rd_data,
   output  reg               o_mem_hst_rdy,
   input                     i_mem_com_rdy,
-  output  reg               o_mem_activate
-
+  output  reg               o_mem_activate,
+  input           [15:0]    i_mem_block_size
 );
 
 //local parameters
@@ -155,24 +163,25 @@ localparam                  READ        = 4'h4;
 localparam                  FINISHED    = 4'h5;
 
 //registes/wires
-reg         rd_stb;
-reg   [7:0] rd_data;
-wire        wr_stb;
-wire  [7:0] wr_data;
-reg         com_rdy;
-wire  [3:0] func_select;
+reg           rd_stb;
+reg   [7:0]   rd_data;
+wire          wr_stb;
+wire  [7:0]   wr_data;
+reg           com_rdy;
+wire  [3:0]   func_select;
+reg   [15:0]  block_size;
 
-reg   [9:0] total_block_count;    //Total number of blocks to transfer
-reg   [9:0] block_count;
-reg   [9:0] data_count;           //Current byte we are working on
-reg         continuous;           //This is a continuous transfer, don't stop till i_activate is deasserted
-reg         data_cntrl_rdy;
-
-
-reg         lcl_wr_stb;
-wire        lcl_rd_stb;
-reg         lcl_hst_rdy;
-reg         lcl_activate;
+reg   [9:0]   total_block_count;    //Total number of blocks to transfer
+reg   [9:0]   block_count;
+reg   [9:0]   data_count;           //Current byte we are working on
+reg           continuous;           //This is a continuous transfer, don't stop till i_activate is deasserted
+reg           data_cntrl_rdy;
+              
+              
+reg           lcl_wr_stb;
+wire          lcl_rd_stb;
+reg           lcl_hst_rdy;
+reg           lcl_activate;
 //wire        lcl_finished;
 
 reg   [3:0] state;
@@ -351,6 +360,7 @@ always @ (*) begin
     rd_stb                  = 0;
     rd_data                 = 0;
     com_rdy                 = 0;
+    block_size              = 0;
 
   end
   else begin
@@ -359,54 +369,63 @@ always @ (*) begin
         rd_stb            = i_cia_rd_stb;
         rd_data           = i_cia_rd_data;
         com_rdy           = i_cia_com_rdy & data_cntrl_rdy;
+        block_size        = i_cia_block_size;
         //finished          = i_cia_finished;
       end
       1: begin
         rd_stb            = i_func1_rd_stb;
         rd_data           = i_func1_rd_data;
         com_rdy           = i_func1_com_rdy & data_cntrl_rdy;
+        block_size        = i_func1_block_size;
         //finished          = i_func1_finished;
       end
       2: begin
         rd_stb            = i_func2_rd_stb;
         rd_data           = i_func2_rd_data;
         com_rdy           = i_func2_com_rdy & data_cntrl_rdy;
+        block_size        = i_func2_block_size;
         //finished          = i_func2_finished;
       end
       3: begin
         rd_stb            = i_func3_rd_stb;
         rd_data           = i_func3_rd_data;
         com_rdy           = i_func3_com_rdy & data_cntrl_rdy;
+        block_size        = i_func3_block_size;
         //finished          = i_func3_finished;
       end
       4: begin
         rd_stb            = i_func4_rd_stb;
         rd_data           = i_func4_rd_data;
         com_rdy           = i_func4_com_rdy & data_cntrl_rdy;
+        block_size        = i_func4_block_size;
         //finished          = i_func4_finished;
       end
       5: begin
         rd_stb            = i_func5_rd_stb;
         rd_data           = i_func5_rd_data;
         com_rdy           = i_func5_com_rdy & data_cntrl_rdy;
+        block_size        = i_func5_block_size;
         //finished          = i_func5_finished;
       end
       6: begin
         rd_stb            = i_func6_rd_stb;
         rd_data           = i_func6_rd_data;
         com_rdy           = i_func6_com_rdy & data_cntrl_rdy;
+        block_size        = i_func6_block_size;
         //finished          = i_func6_finished;
       end
       7: begin
         rd_stb            = i_func7_rd_stb;
         rd_data           = i_func7_rd_data;
         com_rdy           = i_func7_com_rdy & data_cntrl_rdy;
+        block_size        = i_func7_block_size;
         //finished          = i_func7_finished;
       end
       8: begin
         rd_stb            = i_mem_rd_stb;
         rd_data           = i_mem_rd_data;
         com_rdy           = i_mem_com_rdy & data_cntrl_rdy;
+        block_size        = i_mem_block_size;
         //finished          = i_mem_finished;
       end
       default: begin
@@ -463,7 +482,7 @@ always @ (posedge clk) begin
         //Is this block mode?
         //Check to see if we need to adjust data_count (from 0 -> 512)
         if (i_block_mode_flg) begin
-          o_total_data_cnt      <=  512;
+          o_total_data_cnt      <=  block_size;
           if (!continuous) begin
             block_count         <=  block_count + 1;
           end

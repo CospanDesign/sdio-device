@@ -100,41 +100,6 @@ module sdio_cia (
   output                    o_fbr6_en,
   output                    o_fbr7_en,
 
-  input                     i_fbr1_finished,
-  input                     i_fbr1_ready,
-  input         [7:0]       i_fbr1_data_out,
-  input                     i_fbr1_data_stb,
-
-  input                     i_fbr2_finished,
-  input                     i_fbr2_ready,
-  input         [7:0]       i_fbr2_data_out,
-  input                     i_fbr2_data_stb,
-
-  input                     i_fbr3_finished,
-  input                     i_fbr3_ready,
-  input         [7:0]       i_fbr3_data_out,
-  input                     i_fbr3_data_stb,
-
-  input                     i_fbr4_finished,
-  input                     i_fbr4_ready,
-  input         [7:0]       i_fbr4_data_out,
-  input                     i_fbr4_data_stb,
-
-  input                     i_fbr5_finished,
-  input                     i_fbr5_ready,
-  input         [7:0]       i_fbr5_data_out,
-  input                     i_fbr5_data_stb,
-
-  input                     i_fbr6_finished,
-  input                     i_fbr6_ready,
-  input         [7:0]       i_fbr6_data_out,
-  input                     i_fbr6_data_stb,
-
-  input                     i_fbr7_finished,
-  input                     i_fbr7_ready,
-  input         [7:0]       i_fbr7_data_out,
-  input                     i_fbr7_data_stb,
-
 
   //Function Configuration Interface
   output        [7:0]       o_func_enable,
@@ -151,7 +116,7 @@ module sdio_cia (
   input                     i_txrx_in_progress,
   input         [7:0]       i_func_exec_status,
   input         [7:0]       i_func_ready_for_data,
-  output        [15:0]      o_max_f0_block_size,
+  output        [15:0]      o_f0_block_size,
 
   output                    o_1_bit_mode,
   output                    o_4_bit_mode,
@@ -219,7 +184,7 @@ sdio_cccr cccr (
   .i_txrx_in_progress           (i_data_txrx_in_progress_flag ),
   .i_func_exec_status           (i_func_exec_status           ),
   .i_func_ready_for_data        (i_func_ready_for_data        ),
-  .o_max_f0_block_size          (o_max_f0_block_size          ),
+  .o_f0_block_size              (o_f0_block_size              ),
 
   .o_1_bit_mode                 (o_1_bit_mode                 ),
   .o_4_bit_mode                 (o_4_bit_mode                 ),
@@ -268,9 +233,9 @@ sdio_fbr #(
   .clk                          (clk                          ),
   .rst                          (rst                          ),
 
-  .o_csa_en                     (o_fbr1_csa_en                  ),
-  .o_pwr_mode                   (o_fbr1_pwr_mode                ),
-  .o_block_size                 (o_fbr1_block_size              ),
+  .o_csa_en                     (o_fbr1_csa_en                ),
+  .o_pwr_mode                   (o_fbr1_pwr_mode              ),
+  .o_block_size                 (o_fbr1_block_size            ),
 
   .i_activate                   (cia_i_activate[`FUNC1_INDEX] ),
   .i_write_flag                 (i_write_flag                 ),

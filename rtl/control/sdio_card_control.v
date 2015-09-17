@@ -367,6 +367,7 @@ always @ (posedge sdio_clk) begin
               direct_read_write     <= 1;
               response_index        <= R5;
               cmd_data              <= 0;
+              o_func_activate       <= 1;
             end
             `SD_CMD_IO_RW_EXTENDED: begin
               $display("SD CMD IO RW Extended");
@@ -405,20 +406,28 @@ always @ (posedge sdio_clk) begin
         end
       end
       TRANSFER: begin
-        if (i_rsps_idle) begin
-          o_func_activate           <= 1;
+        if (o_cmd_bus_sel) begin
+          o_func_activate             <= 1;
+          //Single Byte Transfer
+          if (i_func_finished) begin
+            o_func_activate           <= 0;
+            rsps_stb                  <= 1;
+            if (o_func_rd_after_wr || !o_func_write_flag) begin
+              cmd_data                <= i_func_read_data;
+            end
+            else begin
+              cmd_data                <= 0;
+            end
+            state                     <= COMMAND;
+          end
         end
-        //Not command bus read/write
-        if (i_func_finished) begin
-          o_func_activate           <= 0;
-          rsps_stb                  <= 1;
-          if (o_func_rd_after_wr || !o_func_write_flag) begin
-            cmd_data                <= i_func_read_data;
+        else if (i_rsps_idle) begin
+          //Not command bus read/write
+          o_func_activate           <=  1;
+          if (i_func_finished) begin
+            o_func_activate         <=  0;
+            state                   <= COMMAND;
           end
-          else begin
-            cmd_data                <= 0;
-          end
-          state                     <= COMMAND;
         end
         if (i_cmd_stb) begin
           case (i_cmd)

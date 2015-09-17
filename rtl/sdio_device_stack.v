@@ -232,7 +232,7 @@ wire                soft_reset;
 wire                en_card_detect_n;
 wire                en_4bit_block_int;
 wire                bus_release_req_stb;
-wire        [15:0]  max_f0_block_size;
+wire        [15:0]  f0_block_size;
 
 wire                cfg_1_bit_mode;
 wire                cfg_4_bit_mode;
@@ -366,6 +366,7 @@ sdio_data_control data_bus_interconnect(
   .o_cia_hst_rdy            (cia_hst_rdy                ),
   .i_cia_com_rdy            (cia_com_rdy                ),
   .o_cia_activate           (cia_activate               ),
+  .i_cia_block_size         (f0_block_size              ),
 
   //Function Interface
   .o_func1_wr_stb           (o_func1_wr_stb             ),
@@ -375,6 +376,7 @@ sdio_data_control data_bus_interconnect(
   .o_func1_hst_rdy          (o_func1_hst_rdy            ),
   .i_func1_com_rdy          (i_func1_com_rdy            ),
   .o_func1_activate         (func1_activate             ),
+  .i_func1_block_size       (o_fbr1_block_size          ),
 
 
   //Function Interface
@@ -385,6 +387,7 @@ sdio_data_control data_bus_interconnect(
   .o_func2_hst_rdy          (o_func2_hst_rdy            ),
   .i_func2_com_rdy          (i_func2_com_rdy            ),
   .o_func2_activate         (o_func2_activate           ),
+  .i_func2_block_size       (o_fbr2_block_size          ),
 
   //Function Interface
   .o_func3_wr_stb           (o_func3_wr_stb             ),
@@ -394,6 +397,7 @@ sdio_data_control data_bus_interconnect(
   .o_func3_hst_rdy          (o_func3_hst_rdy            ),
   .i_func3_com_rdy          (i_func3_com_rdy            ),
   .o_func3_activate         (o_func3_activate           ),
+  .i_func3_block_size       (o_fbr3_block_size          ),
 
   //Function Interface
   .o_func4_wr_stb           (o_func4_wr_stb             ),
@@ -403,6 +407,7 @@ sdio_data_control data_bus_interconnect(
   .o_func4_hst_rdy          (o_func4_hst_rdy            ),
   .i_func4_com_rdy          (i_func4_com_rdy            ),
   .o_func4_activate         (o_func4_activate           ),
+  .i_func4_block_size       (o_fbr4_block_size          ),
 
   //Function Interface
   .o_func5_wr_stb           (o_func5_wr_stb             ),
@@ -412,6 +417,7 @@ sdio_data_control data_bus_interconnect(
   .o_func5_hst_rdy          (o_func5_hst_rdy            ),
   .i_func5_com_rdy          (i_func5_com_rdy            ),
   .o_func5_activate         (o_func5_activate           ),
+  .i_func5_block_size       (o_fbr5_block_size          ),
 
   //Function Interface
   .o_func6_wr_stb           (o_func6_wr_stb             ),
@@ -421,6 +427,7 @@ sdio_data_control data_bus_interconnect(
   .o_func6_hst_rdy          (o_func6_hst_rdy            ),
   .i_func6_com_rdy          (i_func6_com_rdy            ),
   .o_func6_activate         (o_func6_activate           ),
+  .i_func6_block_size       (o_fbr6_block_size          ),
 
   //Function Interface
   .o_func7_wr_stb           (o_func7_wr_stb             ),
@@ -430,6 +437,7 @@ sdio_data_control data_bus_interconnect(
   .o_func7_hst_rdy          (o_func7_hst_rdy            ),
   .i_func7_com_rdy          (i_func7_com_rdy            ),
   .o_func7_activate         (o_func7_activate           ),
+  .i_func7_block_size       (o_fbr7_block_size          ),
 
   //Memory Interface
   .o_mem_wr_stb             (o_mem_wr_stb               ),
@@ -438,7 +446,8 @@ sdio_data_control data_bus_interconnect(
   .i_mem_rd_data            (i_mem_rd_data              ),
   .o_mem_hst_rdy            (o_mem_hst_rdy              ),
   .i_mem_com_rdy            (i_mem_com_rdy              ),
-  .o_mem_activate           (o_mem_activate             )
+  .o_mem_activate           (o_mem_activate             ),
+  .i_mem_block_size         (16'h0000                   )
 );
 
 
@@ -511,7 +520,7 @@ sdio_cia cia (
   .o_soft_reset             (soft_reset                 ),
   .i_txrx_in_progress       (txrx_in_progress           ),
 
-  .o_max_f0_block_size      (max_f0_block_size          ),
+  .o_f0_block_size          (f0_block_size              ),
 
   .o_1_bit_mode             (cfg_1_bit_mode             ),
   .o_4_bit_mode             (cfg_4_bit_mode             ),

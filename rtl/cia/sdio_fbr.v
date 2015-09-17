@@ -87,8 +87,8 @@ assign  fbr[`FBR_CSA_LOW_ADDR]          = {8'h00}; //CSA Address
 assign  fbr[`FBR_CSA_MID_ADDR]          = {8'h00}; //CSA Address
 assign  fbr[`FBR_CSA_HIGH_ADDR]         = {8'h00}; //CSA Address
 assign  fbr[`FBR_DATA_ACC_ADDR]         = {8'h00}; //CSA Data Access
-assign  fbr[`FBR_BLOCK_SIZE_LOW_ADDR]   = {o_block_size[15:8]};
-assign  fbr[`FBR_BLOCK_SIZE_HIGH_ADDR]  = {o_block_size[7:0]};
+assign  fbr[`FBR_BLOCK_SIZE_LOW_ADDR]   = {o_block_size[7:0]};
+assign  fbr[`FBR_BLOCK_SIZE_HIGH_ADDR]  = {o_block_size[15:8]};
 
 //synchronous logic
 always @ (posedge clk) begin
@@ -104,13 +104,13 @@ always @ (posedge clk) begin
         if (i_write_flag) begin
           case(i_address)
             `FBR_FUNC_ID_ADDR:
-              o_csa_en        <=  i_data_in[3];
+              o_csa_en            <=  i_data_in[3];
             `FBR_POWER_SUPPLY_ADDR:
-              o_pwr_mode      <=  i_data_in[7:5];
+              o_pwr_mode          <=  i_data_in[7:5];
             `FBR_BLOCK_SIZE_LOW_ADDR:
-              o_block_size[7:0] <=  i_data_in;
+              o_block_size[7:0]   <=  i_data_in;
             `FBR_BLOCK_SIZE_HIGH_ADDR:
-              o_block_size[7:0] <=  i_data_in;
+              o_block_size[15:8]  <=  i_data_in;
             default: begin
             end 
           endcase

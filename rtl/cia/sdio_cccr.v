@@ -61,7 +61,7 @@ module sdio_cccr (
   input                     i_txrx_in_progress,
   input         [7:0]       i_func_exec_status,
   input         [7:0]       i_func_ready_for_data,
-  output  reg   [15:0]      o_max_f0_block_size,
+  output  reg   [15:0]      o_f0_block_size,
 
   output                    o_1_bit_mode,
   output                    o_4_bit_mode,
@@ -141,8 +141,8 @@ assign  cccr_map[`BUS_SUSPEND_ADDR     ] = {6'b000000, o_bus_release_req_stb, i_
 assign  cccr_map[`FUNC_SELECT_ADDR     ] = {i_txrx_in_progress, 3'b000, o_func_select};
 assign  cccr_map[`EXEC_SELECT_ADDR     ] = {i_func_exec_status};
 assign  cccr_map[`READY_SELECT_ADDR    ] = {i_func_ready_for_data};
-assign  cccr_map[`FN0_BLOCK_SIZE_0_ADDR] = {o_max_f0_block_size[15:8]};
-assign  cccr_map[`FN0_BLOCK_SIZE_1_ADDR] = {o_max_f0_block_size[7:0]};
+assign  cccr_map[`FN0_BLOCK_SIZE_0_ADDR] = {o_f0_block_size[7:0]};
+assign  cccr_map[`FN0_BLOCK_SIZE_1_ADDR] = {o_f0_block_size[15:8]};
 assign  cccr_map[`POWER_CONTROL_ADDR   ] = {4'h0, `TPC,`EMPC, `SMPC};
 assign  cccr_map[`BUS_SPD_SELECT_ADDR  ] = {4'h0, bus_speed_select, `SHS};
 assign  cccr_map[`UHS_I_SUPPORT_ADDR   ] = {5'h0, `SSDR50, `SSDR104, `SSDR50};
@@ -170,7 +170,7 @@ always @ (posedge clk) begin
     o_en_4bit_block_int     <=  0;  //Do not enable this in SDR50, SDR104, DDR50 modes
 
     o_func_select           <=  0;
-    o_max_f0_block_size     <=  0;  //Max Block Size is set by host
+    o_f0_block_size     <=  0;  //Max Block Size is set by host
     bus_speed_select        <=  0;
     driver_type             <=  0;
     o_enable_async_interrupt<=  0;
@@ -204,9 +204,9 @@ always @ (posedge clk) begin
             `FUNC_SELECT_ADDR:
               o_func_select             <=  i_data_in[3:0];
             `FN0_BLOCK_SIZE_0_ADDR:
-              o_max_f0_block_size[15:8] <=  i_data_in;
+              o_f0_block_size[7:0]      <=  i_data_in;
             `FN0_BLOCK_SIZE_1_ADDR:
-              o_max_f0_block_size[7:0]  <=  i_data_in;
+              o_f0_block_size[15:8]     <=  i_data_in;
             `BUS_SPD_SELECT_ADDR:
               bus_speed_select          <=  i_data_in[3:1];
             `DRIVE_STRENGTH_ADDR:
