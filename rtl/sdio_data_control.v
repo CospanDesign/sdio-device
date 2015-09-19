@@ -481,6 +481,7 @@ always @ (posedge clk) begin
         //We are ready to go, activate is high
         //Is this block mode?
         //Check to see if we need to adjust data_count (from 0 -> 512)
+        data_count              <=  0;
         if (i_block_mode_flg) begin
           o_total_data_cnt      <=  block_size;
           if (!continuous) begin
