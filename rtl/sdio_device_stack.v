@@ -268,6 +268,8 @@ wire        [17:0]  cmd_func_data_count;
 wire                cmd_func_activate;
 wire                cmd_func_finished;
 
+wire                data_phy_activate;
+wire                data_phy_finished;
 wire                data_phy_wr_stb;
 wire        [7:0]   data_phy_wr_data;
 wire                data_phy_rd_stb;
@@ -357,6 +359,7 @@ sdio_data_control data_bus_interconnect(
   //.i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
   .o_data_phy_com_rdy       (data_phy_com_rdy           ),
   .o_data_phy_activate      (data_phy_activate          ), /* DATA CNTRL -> DATA PHY: tell the phy that it should be ready */
+  .i_data_phy_finished      (data_phy_finished          ),
 
   //CIA Interface
   .o_cia_wr_stb             (cia_wr_stb                 ),
@@ -568,6 +571,7 @@ sdio_device_phy phy(
 
   //Data Interface
   .i_data_activate          (data_phy_activate          ),
+  .o_data_finished          (data_phy_finished          ),
   .i_write_flag             (o_func_write_flag          ),
 
   .o_data_wr_stb            (data_phy_wr_stb            ),

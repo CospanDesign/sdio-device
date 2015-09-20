@@ -43,6 +43,7 @@ module sdio_data_phy (
 
   //Data Interface
   input                   i_activate,
+  output  reg             o_finished,
   input                   i_write_flag,
   input           [12:0]  i_data_count,
 
@@ -241,6 +242,7 @@ always @ (posedge clk) begin
     o_sdio_data_dir           <=  0;
     capture_crc               <=  0;
     read_data                 <=  0;
+    o_finished                <=  0;
     for (i = 0; i < 4; i = i + 1) begin
       host_crc[i]             <=  0;
     end
@@ -249,6 +251,7 @@ always @ (posedge clk) begin
     read_data                 <=  i_data_rd_data;
     case (state)
       IDLE: begin
+        o_finished            <=  0;
         data_count            <=  0;
         o_sdio_data_dir       <=  0;
         o_data_hst_rdy        <=  0;
@@ -379,6 +382,7 @@ always @ (posedge clk) begin
         end
       end
       FINISHED: begin
+        o_finished              <=  1;
         read_data               <=  8'hFF;
         o_sdio_data_dir         <=  0;
         o_data_crc_good         <=  data_crc_good;

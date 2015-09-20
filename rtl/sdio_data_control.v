@@ -62,6 +62,7 @@ module sdio_data_control (
   //input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
   output                    o_data_phy_com_rdy,
   output                    o_data_phy_activate,
+  input                     i_data_phy_finished,
 
   //CIA Interface
   output  reg               o_cia_wr_stb,
@@ -155,12 +156,13 @@ module sdio_data_control (
 );
 
 //local parameters
-localparam                  IDLE        = 4'h0;
-localparam                  CONFIG      = 4'h1;
-localparam                  ACTIVATE    = 4'h2;
-localparam                  WRITE       = 4'h3;
-localparam                  READ        = 4'h4;
-localparam                  FINISHED    = 4'h5;
+localparam                  IDLE          = 4'h0;
+localparam                  CONFIG        = 4'h1;
+localparam                  ACTIVATE      = 4'h2;
+localparam                  WRITE         = 4'h3;
+localparam                  READ          = 4'h4;
+localparam                  WAIT_FOR_PHY  = 4'h5;
+localparam                  FINISHED      = 4'h6;
 
 //registes/wires
 reg           rd_stb;
@@ -176,8 +178,9 @@ reg   [9:0]   block_count;
 reg   [9:0]   data_count;           //Current byte we are working on
 reg           continuous;           //This is a continuous transfer, don't stop till i_activate is deasserted
 reg           data_cntrl_rdy;
-              
-              
+reg           data_activate;
+
+
 reg           lcl_wr_stb;
 wire          lcl_rd_stb;
 reg           lcl_hst_rdy;
@@ -196,7 +199,7 @@ assign  o_cmd_rd_data       = i_cmd_bus_sel   ? rd_data       : 8'h00;
 assign  o_data_phy_rd_stb   = !i_cmd_bus_sel  ? rd_stb        : 1'b0;
 assign  o_data_phy_rd_data  = !i_cmd_bus_sel  ? rd_data       : 8'h00;
 assign  o_data_phy_com_rdy  = !i_cmd_bus_sel  ? com_rdy       : 1'b0;
-assign  o_data_phy_activate = !i_cmd_bus_sel  ? i_activate    : 1'b0;
+assign  o_data_phy_activate = !i_cmd_bus_sel  ? data_activate : 1'b0;
 
 assign  wr_stb              = i_cmd_bus_sel   ? lcl_wr_stb    : i_data_phy_wr_stb;
 assign  wr_data             = i_cmd_bus_sel   ? i_cmd_wr_data : i_data_phy_wr_data;
@@ -449,6 +452,7 @@ always @ (posedge clk) begin
     continuous                  <=  0;
     data_cntrl_rdy              <=  0;
     o_address                   <=  0;
+    data_activate               <=  0;
   end
   else begin
     case (state)
@@ -461,6 +465,7 @@ always @ (posedge clk) begin
         block_count             <=  0;
         data_cntrl_rdy          <=  0;
         o_address               <=  i_cmd_address;
+        data_activate           <=  0;
         if (i_block_mode_flg) begin
           if (i_data_cnt == 0) begin
             continuous          <=  1;
@@ -500,6 +505,7 @@ always @ (posedge clk) begin
       end
       ACTIVATE: begin
         data_cntrl_rdy          <=  1;
+        data_activate           <=  1;
         if (data_count < o_total_data_cnt) begin
           if (wr_stb || rd_stb) begin
             data_count          <=  data_count + 1;
@@ -510,15 +516,27 @@ always @ (posedge clk) begin
         end
         else begin
           data_cntrl_rdy        <=  0;
-          if (continuous || (block_count < total_block_count)) begin
-            state               <= CONFIG;
+          if (i_block_mode_flg) begin
+            state               <=  WAIT_FOR_PHY;
           end
           else begin
             state               <= FINISHED;
           end
         end
       end
+      WAIT_FOR_PHY: begin
+        if (i_data_phy_finished) begin
+          if (continuous || (block_count < total_block_count)) begin
+            state             <= CONFIG;
+          end
+          else begin
+            state             <= FINISHED;
+          end
+          data_activate         <=  0;
+        end
+      end
       FINISHED: begin
+        data_activate           <=  0;
         o_finished              <=  1;
       end
       default: begin
