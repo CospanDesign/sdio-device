@@ -218,7 +218,7 @@ assign  wr_data             = i_cmd_bus_sel   ? i_cmd_wr_data : i_data_phy_wr_da
 //assign  i_activate            = i_cmd_bus_sel   ? lcl_activate  : i_data_phy_activate;
 assign  d_activate          = i_cmd_bus_sel   ? i_activate    : data_activate;
 assign  func_select         = i_mem_sel       ? 4'h8          : {1'b0, i_func_sel};
-assign  o_data_bus_busy     = (state == ACTIVE);
+assign  o_data_bus_busy     = (state == ACTIVATE);
 //TODO: Not implemented yet
 assign  o_data_read_avail   = 1'b0;
 
