@@ -30,9 +30,14 @@ SOFTWARE.
  *  2015.09.07: Initial Commit
  */
 
-module sdio_data_control (
+module sdio_data_control #(
+  parameter                 DEFAULT_MIN_READ_COOLDOWN = 400
+)(
   input                     clk,
   input                     rst,
+
+  output                    o_data_bus_busy,
+  output                    o_data_read_avail,
 
   input                     i_write_flg,
   input                     i_block_mode_flg,
@@ -162,7 +167,8 @@ localparam                  ACTIVATE      = 4'h2;
 localparam                  WRITE         = 4'h3;
 localparam                  READ          = 4'h4;
 localparam                  WAIT_FOR_PHY  = 4'h5;
-localparam                  FINISHED      = 4'h6;
+localparam                  READ_COOLDOWN = 4'h6;
+localparam                  FINISHED      = 4'h7;
 
 //registes/wires
 reg           rd_stb;
@@ -179,6 +185,7 @@ reg   [9:0]   data_count;           //Current byte we are working on
 reg           continuous;           //This is a continuous transfer, don't stop till i_activate is deasserted
 reg           data_cntrl_rdy;
 reg           data_activate;
+reg   [31:0]  read_cooldown;
 
 
 reg           lcl_wr_stb;
@@ -186,6 +193,8 @@ wire          lcl_rd_stb;
 reg           lcl_hst_rdy;
 reg           lcl_activate;
 //wire        lcl_finished;
+
+wire          d_activate;
 
 reg   [3:0] state;
 
@@ -207,8 +216,11 @@ assign  wr_data             = i_cmd_bus_sel   ? i_cmd_wr_data : i_data_phy_wr_da
 
 //assign  lcl_finished        = i_cmd_bus_sel   ? finished      : 1'b0;
 //assign  i_activate            = i_cmd_bus_sel   ? lcl_activate  : i_data_phy_activate;
-
+assign  d_activate          = i_cmd_bus_sel   ? i_activate    : data_activate;
 assign  func_select         = i_mem_sel       ? 4'h8          : {1'b0, i_func_sel};
+assign  o_data_bus_busy     = (state == ACTIVE);
+//TODO: Not implemented yet
+assign  o_data_read_avail   = 1'b0;
 
 //Multiplexer: Cmd Layer, Data Phy Layer -> Func Layer
 always @ (*) begin
@@ -301,55 +313,55 @@ always @ (*) begin
         o_cia_wr_stb         = wr_stb;
         o_cia_wr_data        = wr_data;
         o_cia_hst_rdy        = data_cntrl_rdy;
-        o_cia_activate       = i_activate;
+        o_cia_activate       = d_activate;
       end
       1: begin
         o_func1_wr_stb       = wr_stb;
         o_func1_wr_data      = wr_data;
         o_func1_hst_rdy      = data_cntrl_rdy;
-        o_func1_activate     = i_activate;
+        o_func1_activate     = d_activate;
       end
       2: begin
         o_func2_wr_stb       = wr_stb;
         o_func2_wr_data      = wr_data;
         o_func2_hst_rdy      = data_cntrl_rdy;
-        o_func2_activate     = i_activate;
+        o_func2_activate     = d_activate;
       end
       3: begin
         o_func3_wr_stb       = wr_stb;
         o_func3_wr_data      = wr_data;
         o_func3_hst_rdy      = data_cntrl_rdy;
-        o_func3_activate     = i_activate;
+        o_func3_activate     = d_activate;
       end
       4: begin
         o_func4_wr_stb       = wr_stb;
         o_func4_wr_data      = wr_data;
         o_func4_hst_rdy      = data_cntrl_rdy;
-        o_func4_activate     = i_activate;
+        o_func4_activate     = d_activate;
       end
       5: begin
         o_func5_wr_stb       = wr_stb;
         o_func5_wr_data      = wr_data;
         o_func5_hst_rdy      = data_cntrl_rdy;
-        o_func5_activate     = i_activate;
+        o_func5_activate     = d_activate;
       end
       6: begin
         o_func6_wr_stb       = wr_stb;
         o_func6_wr_data      = wr_data;
         o_func6_hst_rdy      = data_cntrl_rdy;
-        o_func6_activate     = i_activate;
+        o_func6_activate     = d_activate;
       end
       7: begin
         o_func7_wr_stb       = wr_stb;
         o_func7_wr_data      = wr_data;
         o_func7_hst_rdy      = data_cntrl_rdy;
-        o_func7_activate     = i_activate;
+        o_func7_activate     = d_activate;
       end
       8: begin
         o_mem_wr_stb         = wr_stb;
         o_mem_wr_data        = wr_data;
         o_mem_hst_rdy        = data_cntrl_rdy;
-        o_mem_activate       = i_activate;
+        o_mem_activate       = d_activate;
       end
       default: begin
       end
@@ -453,6 +465,7 @@ always @ (posedge clk) begin
     data_cntrl_rdy              <=  0;
     o_address                   <=  0;
     data_activate               <=  0;
+    read_cooldown               <=  DEFAULT_MIN_READ_COOLDOWN;
   end
   else begin
     case (state)
@@ -517,7 +530,13 @@ always @ (posedge clk) begin
         else begin
           data_cntrl_rdy        <=  0;
           if (i_block_mode_flg) begin
-            state               <=  WAIT_FOR_PHY;
+            if (i_write_flg) begin
+              state             <= WAIT_FOR_PHY;
+            end
+            else begin
+              data_count        <= 0;
+              state             <= READ_COOLDOWN;
+            end
           end
           else begin
             state               <= FINISHED;
@@ -527,12 +546,26 @@ always @ (posedge clk) begin
       WAIT_FOR_PHY: begin
         if (i_data_phy_finished) begin
           if (continuous || (block_count < total_block_count)) begin
-            state             <= CONFIG;
+            state               <= CONFIG;
           end
           else begin
-            state             <= FINISHED;
+            state               <= FINISHED;
           end
           data_activate         <=  0;
+        end
+      end
+      READ_COOLDOWN: begin
+        if (data_count < read_cooldown) begin
+          data_count            <=  data_count + 1;
+        end
+        else begin
+          data_activate         <=  0;
+          if (continuous || (block_count < total_block_count)) begin
+            state               <= CONFIG;
+          end
+          else begin
+            state               <= FINISHED;
+          end
         end
       end
       FINISHED: begin
@@ -543,7 +576,6 @@ always @ (posedge clk) begin
         state                   <=  FINISHED;
       end
     endcase
-
 
     if (!i_activate) begin
       //When !i_activate go back to IDLE, this can effectively cancel transactions or is used when finished is detected

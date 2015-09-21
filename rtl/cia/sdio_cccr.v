@@ -55,10 +55,10 @@ module sdio_cccr (
   output  reg   [2:0]       o_func_abort_stb,
   output  reg               o_en_card_detect_n,
   output  reg               o_en_4bit_block_int, /* Enable interrupts durring 4-bit block data mode */
-  input                     i_func_active,
+  input                     i_data_bus_busy,
   output  reg               o_bus_release_req_stb,
   output  reg   [3:0]       o_func_select,
-  input                     i_txrx_in_progress,
+  input                     i_data_read_avail,
   input         [7:0]       i_func_exec_status,
   input         [7:0]       i_func_ready_for_data,
   output  reg   [15:0]      o_f0_block_size,
@@ -137,8 +137,8 @@ assign  cccr_map[`CARD_COMPAT_ADDR     ] = {`S4BLS, `LSC, o_en_4bit_block_int, `
 assign  cccr_map[`CARD_CIS_LOW_ADDR    ] = main_cis_addr[7:0];
 assign  cccr_map[`CARD_CIS_MID_ADDR    ] = main_cis_addr[15:8];
 assign  cccr_map[`CARD_CIS_HIGH_ADDR   ] = {6'b000000, main_cis_addr[17:16]};
-assign  cccr_map[`BUS_SUSPEND_ADDR     ] = {6'b000000, o_bus_release_req_stb, i_func_active};
-assign  cccr_map[`FUNC_SELECT_ADDR     ] = {i_txrx_in_progress, 3'b000, o_func_select};
+assign  cccr_map[`BUS_SUSPEND_ADDR     ] = {6'b000000, o_bus_release_req_stb, i_data_bus_busy};
+assign  cccr_map[`FUNC_SELECT_ADDR     ] = {i_data_read_avail, 3'b000, o_func_select};
 assign  cccr_map[`EXEC_SELECT_ADDR     ] = {i_func_exec_status};
 assign  cccr_map[`READY_SELECT_ADDR    ] = {i_func_ready_for_data};
 assign  cccr_map[`FN0_BLOCK_SIZE_0_ADDR] = {o_f0_block_size[7:0]};

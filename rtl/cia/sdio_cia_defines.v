@@ -13,7 +13,7 @@
 `define IO_ABORT_ADDR         18'h006
 `define BUS_IF_CONTROL_ADDR   18'h007
 `define CARD_COMPAT_ADDR      18'h008
-`define CARD_CIS_LOW_ADDR     18'h00A
+`define CARD_CIS_LOW_ADDR     18'h009
 `define CARD_CIS_MID_ADDR     18'h00A
 `define CARD_CIS_HIGH_ADDR    18'h00B
 `define BUS_SUSPEND_ADDR      18'h00C

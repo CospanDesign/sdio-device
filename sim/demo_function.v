@@ -71,6 +71,8 @@ module demo_function #(
   input                     i_abort,                //Host asks to abort a transaction
   input                     i_interrupt_enable,     //Enable generating an interrupt from this func
   output                    o_interrupt_pending,    //An interrupt fired off
+  output                    o_execution_status,     //Currently Executing a Command
+  output                    o_ready_for_data,       //Function is ready to receive data
   output                    o_busy,                 //Current status of the function
 
   //Transaction Configuration
@@ -140,6 +142,8 @@ assign  o_read_wait         =   (`SRW && i_request_read_wait);
 assign  o_interrupt_pending =   (i_interrupt_enable && i_request_interrupt);
 assign  o_interrupt         =   o_interrupt_pending;
 assign  o_ready             =   i_enable;
+assign  o_execution_status  =   o_busy;
+assign  o_ready_for_data    =   1'b1;
 
 //synchronous logic
 always @ (*) begin

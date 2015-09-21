@@ -59,6 +59,7 @@ module sdio_device_stack (
   output          [7:0]     o_func_int_enable,
   input           [7:0]     i_func_int_pending,
   input           [7:0]     i_func_exec_status,
+  input           [7:0]     i_func_ready_for_data,
 
   // Function Interface From CIA
   output                    o_fbr1_csa_en,
@@ -254,11 +255,11 @@ wire                enable_async_interrupt;
 wire        [7:0]   i_func_ready;
 wire        [7:0]   o_func_int_enable;
 wire        [7:0]   i_func_int_pending;
-wire        [7:0]   i_func_ready_for_data;
 wire        [2:0]   o_func_abort_stb;
 wire        [3:0]   o_func_select;
 wire        [7:0]   i_func_exec_status;
-wire                func_active;
+wire                data_bus_busy;
+wire                data_read_avail;
 
 wire        [7:0]   cmd_func_write_data;
 wire        [7:0]   cmd_func_read_data;
@@ -330,6 +331,9 @@ sdio_card_control card_controller (
 sdio_data_control data_bus_interconnect(
   .clk                      (sdio_clk                   ),
   .rst                      (rst                        ),
+
+  .o_data_bus_busy          (data_bus_busy              ),
+  .o_data_read_avail        (data_read_avail            ),
 
   .i_write_flg              (o_func_write_flag          ),  /* CMD -> *: We are writing */
   .i_block_mode_flg         (func_block_mode            ),  /* CMD -> DATA CNTRL: this is a block mode transfer */
@@ -513,7 +517,7 @@ sdio_cia cia (
   .o_func_select            (o_func_select              ),
   .i_func_exec_status       (i_func_exec_status         ),
 
-  .i_func_active            (func_active                ),
+  .i_data_bus_busy          (data_bus_busy              ),
 
   //SDCard Configuration Interface
   .o_en_card_detect_n       (en_card_detect_n           ),
@@ -521,7 +525,7 @@ sdio_cia cia (
   .o_bus_release_req_stb    (bus_release_req_stb        ),
 
   .o_soft_reset             (soft_reset                 ),
-  .i_txrx_in_progress       (txrx_in_progress           ),
+  .i_data_read_avail        (data_read_avail            ),
 
   .o_f0_block_size          (f0_block_size              ),
 
