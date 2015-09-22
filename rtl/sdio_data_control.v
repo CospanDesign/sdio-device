@@ -64,7 +64,7 @@ module sdio_data_control #(
   input           [7:0]     i_data_phy_wr_data,
   output                    o_data_phy_rd_stb,
   output          [7:0]     o_data_phy_rd_data,
-  //input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
+  input                     i_data_phy_hst_rdy,  /* DATA PHY -> Func: Ready for receive data */
   output                    o_data_phy_com_rdy,
   output                    o_data_phy_activate,
   input                     i_data_phy_finished,
@@ -517,29 +517,31 @@ always @ (posedge clk) begin
         state                   <=  ACTIVATE;
       end
       ACTIVATE: begin
-        data_cntrl_rdy          <=  1;
-        data_activate           <=  1;
-        if (data_count < o_total_data_cnt) begin
-          if (wr_stb || rd_stb) begin
-            data_count          <=  data_count + 1;
-            if (i_inc_addr_flg) begin
-              o_address         <=  o_address + 1;
-            end
-          end
-        end
-        else begin
-          data_cntrl_rdy        <=  0;
-          if (i_block_mode_flg) begin
-            if (i_write_flg) begin
-              state             <= WAIT_FOR_PHY;
-            end
-            else begin
-              data_count        <= 0;
-              state             <= READ_COOLDOWN;
+        data_activate             <=  1;
+        if (i_cmd_bus_sel || i_data_phy_hst_rdy) begin
+          data_cntrl_rdy          <=  1;
+          if (data_count < o_total_data_cnt) begin
+            if (wr_stb || rd_stb) begin
+              data_count          <=  data_count + 1;
+              if (i_inc_addr_flg) begin
+                o_address         <=  o_address + 1;
+              end
             end
           end
           else begin
-            state               <= FINISHED;
+            data_cntrl_rdy        <=  0;
+            if (i_block_mode_flg) begin
+              if (i_write_flg) begin
+                state             <= WAIT_FOR_PHY;
+              end
+              else begin
+                data_count        <= 0;
+                state             <= READ_COOLDOWN;
+              end
+            end
+            else begin
+              state               <= FINISHED;
+            end
           end
         end
       end

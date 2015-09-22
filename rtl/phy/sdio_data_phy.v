@@ -262,7 +262,6 @@ always @ (posedge clk) begin
             host_crc[i]       <=  0;
           end
           state               <=  START;
-          o_data_hst_rdy      <=  1;
         end
       end
       START: begin
@@ -270,18 +269,20 @@ always @ (posedge clk) begin
         //$display ("sdio_data_phy: SD4 Transaction Started!");
         if (i_write_flag) begin
           if (i_sdio_data_in[0] == 0) begin
-            capture_crc     <= 1;
-            state           <=  WRITE;
+            capture_crc       <= 1;
+            state             <=  WRITE;
           end
           else begin
           end
         end
         else begin
-          if (i_data_com_rdy && i_sdio_data_in[2]) begin
-            o_data_hst_rdy    <=  1;
-            //Both the data bus is ready and the host has not issued the wait signal
-            o_sdio_data_dir   <=  1;
-            state             <=  READ;
+          if (i_sdio_data_in[2]) begin
+            o_data_hst_rdy      <=  1;
+            if (i_data_com_rdy) begin
+              //Both the data bus is ready and the host has not issued the wait signal
+              o_sdio_data_dir   <=  1;
+              state             <=  READ;
+            end
           end
         end
         if (!i_activate) begin
@@ -383,6 +384,7 @@ always @ (posedge clk) begin
       end
       FINISHED: begin
         o_finished              <=  1;
+        o_data_hst_rdy          <=  0;
         read_data               <=  8'hFF;
         o_sdio_data_dir         <=  0;
         o_data_crc_good         <=  data_crc_good;

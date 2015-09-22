@@ -360,7 +360,7 @@ sdio_data_control data_bus_interconnect(
   .i_data_phy_wr_data       (data_phy_wr_data           ),
   .o_data_phy_rd_stb        (data_phy_rd_stb            ),
   .o_data_phy_rd_data       (data_phy_rd_data           ),
-  //.i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
+  .i_data_phy_hst_rdy       (data_phy_hst_rdy           ), /* DATA PHY -> Func: Ready for receive data */
   .o_data_phy_com_rdy       (data_phy_com_rdy           ),
   .o_data_phy_activate      (data_phy_activate          ), /* DATA CNTRL -> DATA PHY: tell the phy that it should be ready */
   .i_data_phy_finished      (data_phy_finished          ),
@@ -582,7 +582,7 @@ sdio_device_phy phy(
   .o_data_wr_data           (data_phy_wr_data           ),
   .i_data_rd_stb            (data_phy_rd_stb            ),
   .i_data_rd_data           (data_phy_rd_data           ),
-  //.o_data_hst_rdy           (data_phy_hst_rdy           ),
+  .o_data_hst_rdy           (data_phy_hst_rdy           ),
   .i_data_com_rdy           (data_phy_com_rdy           ),
 
   //FPGA Interface

@@ -631,7 +631,7 @@ always @ (posedge clk) begin
         o_finished      <=  0;
         data_count      <=  0;
         o_ready         <=  0;
-        if (i_activate) begin
+        if (i_activate && i_ready) begin
           if (i_write_flag) begin
             state       <=  WRITE_START;
           end
