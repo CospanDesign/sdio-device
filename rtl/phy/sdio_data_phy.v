@@ -34,6 +34,7 @@ module sdio_data_phy (
   input                   clk,
   input                   clk_x2,
   input                   rst,
+  input                   i_interrupt,
 
   //Configuration
   input                   i_ddr_en,
@@ -253,10 +254,17 @@ always @ (posedge clk) begin
       IDLE: begin
         o_finished            <=  0;
         data_count            <=  0;
-        o_sdio_data_dir       <=  0;
+        if (i_interrupt) begin
+          o_sdio_data_dir     <=  1;
+          read_data           <=  8'hFD; 
+        end
+        else begin
+          o_sdio_data_dir     <=  0;
+          read_data           <=  8'hFF;
+        end
         o_data_hst_rdy        <=  0;
-        read_data             <=  8'hFF;
         if (i_activate) begin
+          o_sdio_data_dir     <=  0;
           o_data_crc_good     <=  0;
           for (i = 0; i < 4; i = i + 1) begin
             host_crc[i]       <=  0;

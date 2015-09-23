@@ -56,8 +56,6 @@ module sdio_device_stack (
   output          [7:0]     o_func_enable,          //Bitmask Function Enable
   input           [7:0]     i_func_ready,           //Bitmask Function is Ready
   output          [2:0]     o_func_abort,
-  output          [7:0]     o_func_int_enable,
-  input           [7:0]     i_func_int_pending,
   input           [7:0]     i_func_exec_status,
   input           [7:0]     i_func_ready_for_data,
 
@@ -216,7 +214,6 @@ wire                rsps_fail;
 wire                rsps_idle;
 
 wire                interrupt;
-wire                read_wait;
 wire                chip_select_n;
 
 //Function Level
@@ -253,8 +250,8 @@ wire                enable_async_interrupt;
 
 
 wire        [7:0]   i_func_ready;
-wire        [7:0]   o_func_int_enable;
-wire        [7:0]   i_func_int_pending;
+wire        [7:0]   func_int_enable;
+wire        [7:0]   func_int_pending;
 wire        [2:0]   o_func_abort_stb;
 wire        [3:0]   o_func_select;
 wire        [7:0]   i_func_exec_status;
@@ -294,6 +291,9 @@ sdio_card_control card_controller (
   .sdio_clk                 (sdio_clk                   ),/* Run from the SDIO Clock */
   .rst                      (rst                        ),
   .i_soft_reset             (i_soft_reset               ),
+  .i_func_interrupt         (i_interrupt                ),
+  .i_func_interrupt_en      (func_int_enable            ),
+  .o_interrupt              (interrupt                  ),
 
   .o_mem_en                 (o_mem_en                   ),
   .o_func_num               (o_func_num                 ),/* CMD -> FUNC: Function Number to activate */
@@ -510,8 +510,8 @@ sdio_cia cia (
   //Function Configuration Interface
   .o_func_enable            (o_func_enable              ),
   .i_func_ready             (i_func_ready               ),
-  .o_func_int_enable        (o_func_int_enable          ),
-  .i_func_int_pending       (i_func_int_pending         ),
+  .o_func_int_enable        (func_int_enable            ),
+  .i_func_int_pending       (func_int_pending           ),
   .i_func_ready_for_data    (i_func_ready_for_data      ),
   .o_func_abort_stb         (o_func_abort_stb           ),
   .o_func_select            (o_func_select              ),
@@ -570,7 +570,6 @@ sdio_device_phy phy(
   .o_rsps_idle              (rsps_idle                  ),/* PHY -> CMD: Response is IDLE */
 
   .i_interrupt              (interrupt                  ),/* Interrupt */
-  .i_read_wait              (read_wait                  ),/* SDIO Device is busy working on generated a read */
   .i_data_count             (o_func_data_count          ),/* CMD -> PHY: Number of bytes to read/write */
 
   //Data Interface
@@ -606,6 +605,7 @@ assign  sdio_cmd      = sdio_cmd_dir  ? sdio_cmd_out  : sdio_cmd_in;
 assign  sdio_data     = sdio_data_dir ? sdio_data_out : sdio_data_in;
 assign  chip_select_n = sdio_data[3];
 */
+assign  func_int_pending  = i_interrupt;
 
 
 //synchronous logic

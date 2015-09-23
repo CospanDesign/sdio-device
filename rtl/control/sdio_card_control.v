@@ -46,6 +46,9 @@ module sdio_card_control (
   input                     sdio_clk,
   input                     rst,
   input                     i_soft_reset,
+  input         [7:0]       i_func_interrupt,
+  input         [7:0]       i_func_interrupt_en,
+  output                    o_interrupt,
 
   //SD Flash Interface
   output                    o_mem_en,
@@ -84,6 +87,7 @@ module sdio_card_control (
   output        [7:0]       o_rsps_len,
   output  reg               o_rsps_fail,
   input                     i_rsps_idle
+
 );
 
 //local parameters
@@ -161,6 +165,7 @@ assign  r5_cmd      = (state == RESET) || (state == INITIALIZE) || (state == STA
 //assign  o_func_host_rdy = i_cmd_phy_idle; /* Can only send data when i_cmd phy is not sending data */
 assign  cia_activate  = (o_func_num == 0);
 assign  o_mem_en      = 1'b0;
+assign  o_interrupt   = ((i_func_interrupt & i_func_interrupt_en) > 0);
 
 //synchronous logic
 always @ (posedge sdio_clk) begin

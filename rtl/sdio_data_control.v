@@ -618,7 +618,7 @@ always @ (posedge clk) begin
       READ: begin
         lcl_hst_rdy       <=  1;
         if (lcl_rd_stb) begin
-          state           <=  FINISHED;
+          ld_state        <=  FINISHED;
         end
       end
       FINISHED: begin

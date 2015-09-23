@@ -25,8 +25,6 @@ module sdio_device_phy (
 
   //XXX: Need to hook this up
   input               i_interrupt,
-  //XXX: Need to hook this up
-  input               i_read_wait,
 
   input               i_data_activate,
   output              o_data_finished,
@@ -89,6 +87,7 @@ sdio_data_phy data_phy(
   .clk                (i_sdio_clk      ),
   .clk_x2             (i_sdio_clk_x2   ),
   .rst                (rst             ),
+  .i_interrupt        (i_interrupt     ),
 
   .i_ddr_en           (i_ddr_en        ),
   .i_spi_phy          (i_spi_phy       ),
@@ -112,7 +111,6 @@ sdio_data_phy data_phy(
   .o_sdio_data_out    (o_sdio_data_out )
 );
 
-
 //Asynchronous Logic
 assign  busy          = ((state != IDLE) || !i_sdio_cmd_in);
 assign  crc_bit       = o_sdio_cmd_dir ? o_sdio_cmd_out: i_sdio_cmd_in;
@@ -131,7 +129,7 @@ always @ (posedge i_sdio_clk) begin
     o_cmd_stb         <=  0;
     o_cmd             <=  0;
     o_cmd_arg         <=  0;
-    r_crc         <=  0;
+    r_crc             <=  0;
     o_sdio_cmd_out    <=  1;
     o_sdio_cmd_dir    <=  0;
 
@@ -144,7 +142,6 @@ always @ (posedge i_sdio_clk) begin
     o_cmd_stb         <=  0;
     o_cmd_crc_good_stb<=  0;
     crc_rst           <=  0;
-
 
     //Incrementing bit count
     if (busy) begin
@@ -182,9 +179,9 @@ always @ (posedge i_sdio_clk) begin
         else if ((bit_count >= `SDIO_C_BIT_ARG_START) && (bit_count <= `SDIO_C_BIT_ARG_END))
           o_cmd_arg     <=  {o_cmd_arg[30:0], i_sdio_cmd_in};
         else if ((bit_count >= `SDIO_C_BIT_CRC_START) && (bit_count <= `SDIO_C_BIT_CRC_END))
-          r_crc     <=  {r_crc[5:0], i_sdio_cmd_in};
+          r_crc         <=  {r_crc[5:0], i_sdio_cmd_in};
         else begin    //Last Bit
-          r_crc     <=  {r_crc[5:0], i_sdio_cmd_in};
+          r_crc         <=  {r_crc[5:0], i_sdio_cmd_in};
           /*
           if (r_crc == crc)
             o_cmd_crc_good_stb    <=  1;
