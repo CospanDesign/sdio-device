@@ -180,7 +180,12 @@ always @ (posedge clk) begin
 
   end
   else begin
-    o_func_abort_stb[abort_sel]  <=  1;
+    if (abort_sel == 0) begin
+      o_func_abort_stb                    <=  0;
+    end
+    else begin
+      o_func_abort_stb[abort_sel]         <=  1;
+    end
 
     if (i_activate) begin
       if (i_data_stb) begin

@@ -55,7 +55,7 @@ module sdio_device_stack (
   //Function Configuration
   output          [7:0]     o_func_enable,          //Bitmask Function Enable
   input           [7:0]     i_func_ready,           //Bitmask Function is Ready
-  output          [2:0]     o_func_abort,
+  output          [2:0]     o_func_abort_stb,
   input           [7:0]     i_func_exec_status,
   input           [7:0]     i_func_ready_for_data,
 
@@ -87,7 +87,6 @@ module sdio_device_stack (
   output                    o_fbr7_csa_en,
   output          [3:0]     o_fbr7_pwr_mode,
   output          [15:0]    o_fbr7_block_size,
-
 
   //Function 1 Interface
   output                    o_func1_wr_stb,
@@ -161,6 +160,7 @@ module sdio_device_stack (
   input                     i_mem_com_rdy,
   output                    o_mem_activate,
 
+  //Broadcast Values that go to all Functions/Memory
   output                    o_func_write_flag,
   output          [3:0]     o_func_num,
   output                    o_func_rd_after_wr,
@@ -252,7 +252,6 @@ wire                enable_async_interrupt;
 wire        [7:0]   i_func_ready;
 wire        [7:0]   func_int_enable;
 wire        [7:0]   func_int_pending;
-wire        [2:0]   o_func_abort_stb;
 wire        [3:0]   o_func_select;
 wire        [7:0]   i_func_exec_status;
 wire                data_bus_busy;
@@ -382,7 +381,7 @@ sdio_data_control data_bus_interconnect(
   .i_func1_rd_data          (i_func1_rd_data            ),
   .o_func1_hst_rdy          (o_func1_hst_rdy            ),
   .i_func1_com_rdy          (i_func1_com_rdy            ),
-  .o_func1_activate         (func1_activate             ),
+  .o_func1_activate         (o_func1_activate           ),
   .i_func1_block_size       (o_fbr1_block_size          ),
 
 

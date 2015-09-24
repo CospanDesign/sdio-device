@@ -276,6 +276,7 @@ always @ (posedge clk) begin
         read_data             <=  8'hFF;
         //$display ("sdio_data_phy: SD4 Transaction Started!");
         if (i_write_flag) begin
+          o_data_hst_rdy      <= 1;
           if (i_sdio_data_in[0] == 0) begin
             capture_crc       <= 1;
             state             <=  WRITE;

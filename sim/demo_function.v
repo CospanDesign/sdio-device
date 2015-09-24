@@ -88,15 +88,15 @@ module demo_function #(
   output    reg             o_data_rdy,             //Function is ready to receive up to block size of data
   input                     i_data_stb,             //Host is sending a byte of data
   input                     i_host_rdy,             //Host is ready to receive data from function
-  input         [17:0]      i_data_count,           //Number of bytes or blocks to read/write
+  input         [12:0]      i_data_count,           //Number of bytes or blocks to read/write
   output    reg             o_data_stb,             //SDIO sends a piece of data to host
 
   //Out of band signaling
-  output                    o_read_wait,            //When asserted function is not ready to receive more data
+//  output                    o_read_wait,            //When asserted function is not ready to receive more data
   output                    o_interrupt,            //Launch off an interrupt
 
   //Test Stimulate
-  input                     i_request_read_wait,    //Used for Simulation to test read wait
+//  input                     i_request_read_wait,    //Used for Simulation to test read wait
   input                     i_request_interrupt     //Used for simulation to test interrupt
 
 );
@@ -112,7 +112,7 @@ wire            [11:0]      mem_addr;
 reg                         mem_write_stb;
 reg             [31:0]      mem_write_data;
 wire            [31:0]      mem_read_data;
-reg             [17:0]      data_count;
+reg             [12:0]      data_count;
 reg             [1:0]       byte_count;
 reg             [31:0]      block_data_count;
 wire                        count_finished;
@@ -127,16 +127,18 @@ blk_mem #(
     .clka                   (sdio_clk       ),
     .wea                    (mem_write_stb  ),
     .addra                  (mem_addr       ),
-    .clkb                   (blk            ),
+    //.clkb                   (blk            ),
+    .clkb                   (sdio_clk       ),
     .addrb                  (mem_addr       ),
     .doutb                  (mem_read_data  )
 );
 //asynchronous logic
 assign  mem_addr            =   address[11:0];
 assign  o_busy              =   state != IDLE;
-assign  count_finished      =   i_block_mode ?  (block_data_count >= i_data_count) :
-                                                (data_count       >= i_data_count);
-assign  o_read_wait         =   (`SRW && i_request_read_wait);
+//assign  count_finished      =   i_block_mode ?  (block_data_count >= i_data_count) :
+//                                                (data_count       >= i_data_count);
+assign  count_finished      =   (data_count >= i_data_count);
+//assign  o_read_wait         =   (`SRW && i_request_read_wait);
 assign  o_interrupt         =   i_request_interrupt;
 assign  o_ready             =   i_enable;
 assign  o_execution_status  =   o_busy;
@@ -173,7 +175,7 @@ always @ (posedge sdio_clk) begin
     if (state == IDLE) begin
         data_count          <=  0;
         block_data_count    <=  0;
-        address             <=  i_addr[15:4];
+        address             <=  i_addr[12:2];
     end
     else if ((state == WRITE) || (state == READ)) begin
       if (i_data_stb || o_data_stb) begin
@@ -182,7 +184,7 @@ always @ (posedge sdio_clk) begin
         end
         if (i_block_mode) begin
           if (data_count < i_block_size) begin
-            data_count      <=  data_count + 18'h1;
+            data_count      <=  data_count + 13'h1;
           end
           else begin
             if (block_data_count  < data_count) begin
