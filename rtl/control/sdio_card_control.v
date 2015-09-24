@@ -303,7 +303,8 @@ always @ (posedge sdio_clk) begin
           case (i_cmd)
             `SD_CMD_IO_SEND_OP_CMD: begin
               v1p8_sel              <=  i_cmd_arg[`CMD5_ARG_S18R];
-              voltage_select        <=  i_cmd_arg[`CMD5_ARG_OCR] & `OCR_VALUE;
+              //voltage_select        <=  i_cmd_arg[`CMD5_ARG_OCR] & `OCR_VALUE;
+              voltage_select        <=  `OCR_VALUE;
               response_index        <=  R4;
               rsps_stb              <=  1;
             end
