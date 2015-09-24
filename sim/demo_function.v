@@ -64,7 +64,7 @@ module demo_function #(
 
   //Configuration
   input                     i_csa_en,
-  input                     i_pwr_mode,
+  input         [3:0]       i_pwr_mode,
   input         [15:0]      i_block_size,           //Maximum Size of block transfer
   input                     i_enable,               //Host says they want to use the function
   output                    o_ready,                //Function is ready to accept data/command
@@ -118,6 +118,9 @@ reg             [31:0]      block_data_count;
 wire                        count_finished;
 reg             [31:0]      address;
 
+reg                         write_stb;
+reg             [31:0]      write_data;
+
 //submodules
 blk_mem #(
     .DATA_WIDTH             (32             ),  //More Challenging but this is going to be more like final applications
@@ -127,6 +130,7 @@ blk_mem #(
     .clka                   (sdio_clk       ),
     .wea                    (mem_write_stb  ),
     .addra                  (mem_addr       ),
+    .dina                   (write_data     ),
     //.clkb                   (blk            ),
     .clkb                   (sdio_clk       ),
     .addrb                  (mem_addr       ),
@@ -207,19 +211,25 @@ end
 always @ (posedge sdio_clk) begin
   mem_write_stb             <=  0;
   o_data_stb                <=  0;
+  write_stb                 <=  0;
   if (rst) begin
     byte_count              <=  0;
     mem_write_data          <=  0;
     o_finished              <=  0;
     o_data_rdy              <=  0;
+    write_data              <=  0;
 
     state                   <=  IDLE;
   end
   else begin
+    if (write_stb) begin
+      mem_write_stb         <=  1;
+    end
     case (state)
       IDLE: begin
         byte_count          <=  0;
         o_data_rdy          <=  0;
+        o_finished          <=  0;
         if (i_activate)begin
           o_data_rdy        <=  1;
           if (i_write_flag) begin
@@ -236,9 +246,10 @@ always @ (posedge sdio_clk) begin
         end
         if (i_data_stb) begin
           //Shift Data In
-          mem_write_data      <=  {mem_write_data[23:0], i_write_data};
+          write_data          <=  {write_data[23:0], i_write_data};
           if (byte_count == 2'b11) begin
-            mem_write_stb     <=  1;
+            write_stb         <=  1;
+            mem_write_data    <=  {write_data[23:0], i_write_data};
           end
           byte_count          <= byte_count + 2'b01;
         end
@@ -254,6 +265,7 @@ always @ (posedge sdio_clk) begin
       end
       FINISHED: begin
         o_data_rdy          <=  0;
+        o_finished          <=  1;
         if (!i_activate) begin
           state             <=  IDLE;
         end

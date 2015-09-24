@@ -162,6 +162,7 @@ module sdio_device_stack (
 
   //Broadcast Values that go to all Functions/Memory
   output                    o_func_write_flag,
+  output                    o_func_block_mode,
   output          [3:0]     o_func_num,
   output                    o_func_rd_after_wr,
   output                    o_func_inc_addr,
@@ -218,9 +219,6 @@ wire                chip_select_n;
 
 //Function Level
 wire                cmd_bus_sel;
-wire                func_activate;
-wire                func_inc_addr;
-wire                func_block_mode;
 
 wire                tunning_block;
 
@@ -252,8 +250,6 @@ wire                enable_async_interrupt;
 wire        [7:0]   i_func_ready;
 wire        [7:0]   func_int_enable;
 wire        [7:0]   func_int_pending;
-wire        [3:0]   o_func_select;
-wire        [7:0]   i_func_exec_status;
 wire                data_bus_busy;
 wire                data_read_avail;
 
@@ -297,7 +293,7 @@ sdio_card_control card_controller (
   .o_mem_en                 (o_mem_en                   ),
   .o_func_num               (o_func_num                 ),/* CMD -> FUNC: Function Number to activate */
   .o_func_inc_addr          (o_func_inc_addr            ),/* CMD -> FUNC: Inc address after every read/write */
-  .o_func_block_mode        (func_block_mode            ),/* CMD -> FUNC: This is a block level transfer, not byte */
+  .o_func_block_mode        (o_func_block_mode          ),/* CMD -> FUNC: This is a block level transfer, not byte */
   .o_func_write_flag        (o_func_write_flag          ),/* CMD -> FUNC: We are writing */
   .o_func_rd_after_wr       (o_func_rd_after_wr         ),/* CMD -> FUNC: Read the value after a write */
   .o_func_addr              (cmd_addr                   ),/* CMD -> FUNC: Address we are talking to */
@@ -335,7 +331,7 @@ sdio_data_control data_bus_interconnect(
   .o_data_read_avail        (data_read_avail            ),
 
   .i_write_flg              (o_func_write_flag          ),  /* CMD -> *: We are writing */
-  .i_block_mode_flg         (func_block_mode            ),  /* CMD -> DATA CNTRL: this is a block mode transfer */
+  .i_block_mode_flg         (o_func_block_mode          ),  /* CMD -> DATA CNTRL: this is a block mode transfer */
   .i_data_cnt               (cmd_data_cnt               ),
   .o_total_data_cnt         (o_func_data_count          ),
 
@@ -513,7 +509,7 @@ sdio_cia cia (
   .i_func_int_pending       (func_int_pending           ),
   .i_func_ready_for_data    (i_func_ready_for_data      ),
   .o_func_abort_stb         (o_func_abort_stb           ),
-  .o_func_select            (o_func_select              ),
+//  .o_func_select            (o_func_select              ),  //XXX: Track this down!
   .i_func_exec_status       (i_func_exec_status         ),
 
   .i_data_bus_busy          (data_bus_busy              ),
