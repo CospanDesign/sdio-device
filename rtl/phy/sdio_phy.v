@@ -202,7 +202,7 @@ always @ (posedge i_sdio_clk) begin
         end
 
 
-        $display("CMD:Args %h:%h", o_cmd, o_cmd_arg);
+        //$display("CMD:Args %h:%h", o_cmd, o_cmd_arg);
         o_cmd_stb               <=  1;
         o_sdio_cmd_out          <=  1;
         o_sdio_cmd_dir          <=  1;

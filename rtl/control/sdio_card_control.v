@@ -330,6 +330,7 @@ always @ (posedge sdio_clk) begin
         if (i_cmd_stb) begin
           case (i_cmd)
             `SD_CMD_SEND_RELATIVE_ADDR: begin
+              $display("SD CMD Send Relative Address");
               state                 <=  STANDBY;
               response_index        <=  R6;
               rsps_stb              <=  1;
@@ -337,14 +338,17 @@ always @ (posedge sdio_clk) begin
             `SD_CMD_SEL_DESEL_CARD: begin
               response_index        <=  R1;
               if (register_card_address == i_cmd_arg[`CMD7_RCA]) begin
+                $display("SD CMD Send Relative Address: Card Selected");
                 state               <= COMMAND;
                 rsps_stb            <=  1;
               end
               else begin
+                $display("SD CMD Send Relative Address: Incorrect Address");
                 o_rsps_fail         <=  1;
               end
             end
             `SD_CMD_GO_INACTIVE_STATE: begin
+              $display("SD CMD Go to inactive state");
               state                 <=  INACTIVE;
             end
             default: begin
@@ -362,6 +366,7 @@ always @ (posedge sdio_clk) begin
           direct_read_write         <= 0;
           case (i_cmd)
             `SD_CMD_IO_RW_DIRECT: begin
+              $display("SD CMD IO RW");
               o_func_write_flag     <= i_cmd_arg[`CMD52_ARG_RW_FLAG ];
               o_func_rd_after_wr    <= i_cmd_arg[`CMD52_ARG_RAW_FLAG];
               o_func_num            <= i_cmd_arg[`CMD52_ARG_FNUM    ];
@@ -391,17 +396,20 @@ always @ (posedge sdio_clk) begin
             end
             `SD_CMD_SEL_DESEL_CARD: begin
               if (register_card_address != i_cmd_arg[`CMD7_RCA]) begin
+                $display("Card Deselected");
                 state               <= STANDBY;
               end
               response_index        <= R1;
               rsps_stb              <= 1;
             end
             `SD_CMD_SEND_TUNNING_BLOCK: begin
+              $display("SD CMD Send tunning block");
               response_index        <= R1;
               rsps_stb              <= 1;
               o_tunning_block       <= 1;
             end
             `SD_CMD_GO_INACTIVE_STATE: begin
+              $display("SD CMD Go to inactive state");
               state                 <= INACTIVE;
             end
             default: begin

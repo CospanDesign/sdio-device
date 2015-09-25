@@ -298,19 +298,20 @@ always @ (posedge sdio_clk) begin
           end
           2: begin
             o_read_data     <=  read_data[15:8];
+            data_count      <=  data_count + 1;
           end
           3: begin
             o_read_data     <=  read_data[7:0];
             //mem_addr        <=  address;
             //address         <=  address + 1;
             if (data_count < i_data_count[12:2]) begin
-              data_count    <=  data_count + 1;
               read_data     <=  mem_read_data;
             end
             else begin
               state         <= FINISHED;
             end
           end
+
         endcase
         byte_count        <=  byte_count + 2'b01;
       end
