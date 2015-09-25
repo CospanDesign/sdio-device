@@ -103,12 +103,14 @@ module demo_function #(
 //local parameters
 localparam      IDLE        =   4'h0;
 localparam      WRITE       =   4'h1;
-localparam      READ        =   4'h2;
-localparam      FINISHED    =   4'h5;
+localparam      READ_START  =   4'h2;
+localparam      READ        =   4'h3;
+localparam      FINISHED    =   4'h4;
 
 //registes/wires
 reg             [3:0]       state;
-wire            [11:0]      mem_addr;
+reg             [11:0]      mem_addr;
+reg                         write_stb;
 reg                         mem_write_stb;
 reg             [31:0]      mem_write_data;
 wire            [31:0]      mem_read_data;
@@ -118,8 +120,8 @@ reg             [31:0]      block_data_count;
 wire                        count_finished;
 reg             [31:0]      address;
 
-reg                         write_stb;
 reg             [31:0]      write_data;
+reg             [31:0]      read_data;
 
 //submodules
 blk_mem #(
@@ -130,14 +132,13 @@ blk_mem #(
     .clka                   (sdio_clk       ),
     .wea                    (mem_write_stb  ),
     .addra                  (mem_addr       ),
-    .dina                   (write_data     ),
+    .dina                   (mem_write_data ),
     //.clkb                   (blk            ),
     .clkb                   (sdio_clk       ),
     .addrb                  (mem_addr       ),
     .doutb                  (mem_read_data  )
 );
 //asynchronous logic
-assign  mem_addr            =   address[11:0];
 assign  o_busy              =   state != IDLE;
 //assign  count_finished      =   i_block_mode ?  (block_data_count >= i_data_count) :
 //                                                (data_count       >= i_data_count);
@@ -147,8 +148,10 @@ assign  o_interrupt         =   i_request_interrupt;
 assign  o_ready             =   i_enable;
 assign  o_execution_status  =   o_busy;
 assign  o_ready_for_data    =   1'b1;
+//assign  mem_write_data      =   {write_data[23:0], i_write_data};
 
 //synchronous logic
+/*
 always @ (*) begin
   if(rst) begin
     o_read_data             <=  8'h0;
@@ -166,102 +169,150 @@ always @ (*) begin
     endcase
   end
 end
+*/
 
 //Counter
 //XXX: This may need to be a mealy state machine
+/*
 always @ (posedge sdio_clk) begin
   if (rst) begin
     data_count              <=  0;
     block_data_count        <=  0;
-    address                 <=  0;
   end
   else begin
     if (state == IDLE) begin
         data_count          <=  0;
         block_data_count    <=  0;
-        address             <=  i_addr[12:2];
     end
     else if ((state == WRITE) || (state == READ)) begin
       if (i_data_stb || o_data_stb) begin
-        if (i_inc_addr) begin
-          address           <=  address + 1;
-        end
         if (i_block_mode) begin
           if (data_count < i_block_size) begin
-            data_count      <=  data_count + 13'h1;
+            data_count            <=  data_count + 13'h1;
           end
           else begin
             if (block_data_count  < data_count) begin
               block_data_count    <=  block_data_count + 1;
-              data_count  <=  18'h0;
+              data_count          <=  13'h0;
             end
           end
         end
         else begin
-          if (data_count < i_data_count) begin
-              data_count  <=  data_count + 18'h1;
-          end
+          data_count              <=  data_count + 13'h1;
         end
       end
     end
   end
 end
+*/
 
 //Main State Machine
 always @ (posedge sdio_clk) begin
   mem_write_stb             <=  0;
-  o_data_stb                <=  0;
   write_stb                 <=  0;
+  o_data_stb                <=  0;
   if (rst) begin
     byte_count              <=  0;
-    mem_write_data          <=  0;
+    //mem_write_data          <=  0;
     o_finished              <=  0;
     o_data_rdy              <=  0;
     write_data              <=  0;
+    address                 <=  0;
+    mem_addr                <=  0;
+    o_read_data             <=  0;
+    read_data               <=  0;
 
     state                   <=  IDLE;
+    data_count              <=  0;
+    block_data_count        <=  0;
+    mem_write_data          <=  0;
   end
   else begin
     if (write_stb) begin
       mem_write_stb         <=  1;
+      address               <=  address + 1;
     end
     case (state)
       IDLE: begin
         byte_count          <=  0;
         o_data_rdy          <=  0;
         o_finished          <=  0;
+        mem_addr            <=  0;
+        data_count          <=  0;
         if (i_activate)begin
+          address           <=  i_addr[12:2];
+          mem_addr          <=  i_addr[12:2];
           o_data_rdy        <=  1;
           if (i_write_flag) begin
             state           <=  WRITE;
           end
           else begin
-            state           <=  READ;
+            state           <=  READ_START;
           end
         end
       end
       WRITE: begin
-        if (count_finished) begin
+        if (data_count < i_data_count) begin
+          if (i_data_stb) begin
+            //Shift Data In
+            write_data          <= {write_data[23:0], i_write_data};
+            case (byte_count)
+              0: begin
+              end
+              1: begin
+              end
+              2: begin
+                mem_addr          <= address;
+              end
+              3: begin
+                write_stb         <=  1;
+                data_count        <= data_count + 1;
+                mem_write_data    <= {write_data[23:0], i_write_data};
+              end
+            endcase
+            byte_count          <= byte_count + 2'b01;
+          end
+        end
+        else begin
           state             <= FINISHED;
         end
-        if (i_data_stb) begin
-          //Shift Data In
-          write_data          <=  {write_data[23:0], i_write_data};
-          if (byte_count == 2'b11) begin
-            write_stb         <=  1;
-            mem_write_data    <=  {write_data[23:0], i_write_data};
-          end
-          byte_count          <= byte_count + 2'b01;
+      end
+      READ_START: begin
+        if (i_host_rdy) begin
+          read_data         <=  mem_read_data;
+          o_read_data       <=  mem_read_data[31:24];
+          byte_count        <=  0;
+          //o_data_stb        <=  1;
+          state             <=  READ;
         end
       end
       READ: begin
-        if (count_finished) begin
-          state             <= FINISHED;
-        end
-        if (i_host_rdy) begin
-          o_data_stb        <= 1;
-          byte_count        <=  byte_count + 2'b01;
-        end
+        o_data_stb        <= 1;
+        case (byte_count)
+          0: begin
+            o_read_data     <=  read_data[31:24];
+            mem_addr        <=  mem_addr + 1;
+          end
+          1: begin
+            o_read_data     <=  read_data[23:16];
+          end
+          2: begin
+            o_read_data     <=  read_data[15:8];
+          end
+          3: begin
+            o_read_data     <=  read_data[7:0];
+            //mem_addr        <=  address;
+            //address         <=  address + 1;
+            if (data_count < i_data_count[12:2]) begin
+              data_count    <=  data_count + 1;
+              read_data     <=  mem_read_data;
+            end
+            else begin
+              state         <= FINISHED;
+            end
+          end
+        endcase
+        byte_count        <=  byte_count + 2'b01;
       end
       FINISHED: begin
         o_data_rdy          <=  0;
