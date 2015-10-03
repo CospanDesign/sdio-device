@@ -32,6 +32,8 @@ module sd_dev_platform_cocotb (
 input               clk,
 input               rst,
 
+output              o_sd_clk,
+output              o_sd_clk_x2,
 //SD Stack Interface
 output  reg         o_locked,
 input               i_sd_cmd_dir,
@@ -64,6 +66,9 @@ wire          [3:0]   out_remap;
 reg       posedge_clk;
 reg       negedge_clk;
 
+
+assign  o_sd_clk      = i_phy_clk;
+assign  o_sd_clk_x2   = clk;
 
 assign  io_phy_sd_cmd = i_sd_cmd_dir  ? i_sd_cmd_out : 1'hZ;
 assign  o_sd_cmd_in   = io_phy_sd_cmd;
