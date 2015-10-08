@@ -375,7 +375,7 @@ def generate_cis(config, cis_output_path, cia_output_path):
             continue
 
         f = config["functions"][i - 1]
-        print "f: %s" % str(f)
+        #print "f: %s" % str(f)
         #Add Function ID
         main_cis.append(CIS_TYPE["FUNCTION_ID"]["code"])
         main_cis.append(CIS_TYPE["FUNCTION_ID"]["length"])
@@ -477,12 +477,19 @@ def generate_cis(config, cis_output_path, cia_output_path):
         main_cis.append(CIS_TYPE["END"]["code"])
         address_list.append(len(main_cis) - 1)
 
-    print "test :%s" % str(main_cis)
+    #print "test :%s" % str(main_cis)
     #Tuple returnning the offsets for each of the address for main CIS, and function CIS as well as the length of the
     # Total CIS
     with open(cis_output_path, 'w') as f:
-        main_cis.tofile(f)
-    print "Substituting..."
+        while (len(main_cis) % 4) != 0:
+            main_cis.append(0)
+        for pos in range(0, len(main_cis), 4):
+            f.write("%02X%02X%02X%02X\n" % (    main_cis[pos + 0],
+                                                main_cis[pos + 1],
+                                                main_cis[pos + 2],
+                                                main_cis[pos + 3]))
+        #main_cis.tofile(f)
+    #print "Substituting..."
     cia_output_buf = cia_template.safe_substitute(
         FUNC1_CIS_OFFSET =   address_list[0],
         FUNC2_CIS_OFFSET =   address_list[1],
@@ -531,7 +538,7 @@ def main(argv):
     args = parser.parse_args()
 
     config = None
-    print "config path: %s" % args.config
+    #print "config path: %s" % args.config
     with open(args.config, 'r') as f:
         config = json.load(f)
 
