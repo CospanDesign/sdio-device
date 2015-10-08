@@ -22,7 +22,7 @@ DEFAULT_CIA_TEMPLATE_PATH = os.path.join(BASE_PATH, "rtl", "cia", DEFAULT_CIA_TE
 DEFAULT_CIA_OUTPUT_FILE = "sdio_cia_defines.v"
 DEFAULT_CIA_OUTPUT_PATH = os.path.join(BASE_PATH, "rtl", "cia", DEFAULT_CIA_OUTPUT_FILE)
 
-DEFAULT_CIS_OUTPUT = "sdio_cis_rom.txt"
+DEFAULT_CIS_OUTPUT = "sdio_cis_rom.rom"
 DEFAULT_CIS_OUTPUT_PATH = os.path.join(BASE_PATH, "rtl", "cia", DEFAULT_CIS_OUTPUT)
 
 DEFAULT_MIN_CURRENT = 10
