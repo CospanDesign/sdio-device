@@ -49,7 +49,7 @@ reg   [7:0]                 rom [0:FILE_LENGTH];
 //asynchronous logic
 //synchronous logic
 initial begin
-  $readmemb(FILENAME, rom, 0, FILE_LENGTH - 1);
+  $readmemh(FILENAME, rom, 0, FILE_LENGTH - 1);
 end
 
 always @ (posedge clk) begin
