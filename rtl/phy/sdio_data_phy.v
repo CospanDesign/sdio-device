@@ -224,6 +224,7 @@ always @ (posedge clk_x2) begin
   end
 end
 
+
 always @ (posedge clk) begin
   if (rst) begin
     o_sdio_data_out           <=  8'hFF;
@@ -387,7 +388,6 @@ always @ (posedge clk) begin
         end
         else begin
           read_data             <=  8'hFF;
-          o_sdio_data_out       <=  8'hFF;
           state                 <=  FINISHED;
         end
       end
