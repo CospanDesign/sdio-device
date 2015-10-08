@@ -196,14 +196,14 @@ always @ (posedge clk_x2) begin
     case (crc_state)
       IDLE: begin
         crc_rst               <=  1;
-        if (capture_crc && !clk) begin
+        if (capture_crc && !i_posedge_clk) begin
           crc_rst             <=  0;
           crc_state           <=  PROCESS_CRC;
           enable_crc          <=  1;
         end
       end
       PROCESS_CRC: begin
-        if (!capture_crc && !clk) begin
+        if (!capture_crc && !i_posedge_clk) begin
           crc_state           <=  FINISHED;
           enable_crc          <=  0;
         end
