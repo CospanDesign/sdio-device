@@ -22,7 +22,7 @@ DEFAULT_CIA_TEMPLATE_PATH = os.path.join(BASE_PATH, "rtl", "cia", DEFAULT_CIA_TE
 DEFAULT_CIA_OUTPUT_FILE = "sdio_cia_defines.v"
 DEFAULT_CIA_OUTPUT_PATH = os.path.join(BASE_PATH, "rtl", "cia", DEFAULT_CIA_OUTPUT_FILE)
 
-DEFAULT_CIS_OUTPUT = "sdio_cis_rom.rom"
+DEFAULT_CIS_OUTPUT = "sdio_cis_rom.txt"
 DEFAULT_CIS_OUTPUT_PATH = os.path.join(BASE_PATH, "rtl", "cia", DEFAULT_CIS_OUTPUT)
 
 DEFAULT_MIN_CURRENT = 10
@@ -491,6 +491,7 @@ def generate_cis(config, cis_output_path, cia_output_path):
         FUNC5_CIS_OFFSET =   address_list[4],
         FUNC6_CIS_OFFSET =   address_list[5],
         FUNC7_CIS_OFFSET =   address_list[6],
+        CIS_FILE_NAME    =   os.path.split(cis_output_path)[-1],
         CIS_FILE_LENGTH  =   len(main_cis)
     )
     with open(cia_output_path, 'w') as f:

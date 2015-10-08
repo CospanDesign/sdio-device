@@ -174,7 +174,6 @@ IODELAY2 #(
   .IDELAY_MODE          ("NORMAL"             ),  // NORMAL or PCI
   .SERDES_MODE          ("SLAVE"              ),  // NONE, MASTER or SLAVE
   .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"      ),  // <STAY_AT_LIMIT>, WRAPAROUND
-  .IDELAY_TYPE          ("FIXED"              ),   
   .DELAY_SRC            ("IDATAIN"            ),  // "IO", "IDATAIN", "ODATAIN"
   .SIM_TAPDELAY_VALUE   (75                   )   // Simulation Tap Delay
 )clk_delay_s (
