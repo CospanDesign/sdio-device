@@ -81,7 +81,7 @@ reg               [3:0]   crc_state;
 
 reg               [12:0]  data_count;
 wire                      data_crc_good;
-reg                       posedge_clk;
+//reg                       posedge_clk;
 reg               [3:0]   crc_bit;
 wire              [15:0]  crc_out [0:3];
 
@@ -228,6 +228,7 @@ always @ (posedge clk)begin
   end
 end
 
+/*
 always @ (posedge clk_x2) begin
   if (rst) begin
     posedge_clk               <=  0;
@@ -241,6 +242,7 @@ always @ (posedge clk_x2) begin
     end
   end
 end
+*/
 
 always @ (posedge clk) begin
   if (rst) begin
