@@ -32,6 +32,8 @@ module sd_dev_platform_cocotb (
 input               clk,
 input               rst,
 
+input               ddr_en,
+
 output              o_sd_clk,
 output              o_sd_clk_x2,
 //SD Stack Interface
@@ -43,8 +45,8 @@ input               i_sd_cmd_dir,
 output              o_sd_cmd_in,
 input               i_sd_cmd_out,
 
-
 input               i_sd_data_dir,
+
 output  reg   [7:0] o_sd_data_in,
 input         [7:0] i_sd_data_out,
 
@@ -103,7 +105,6 @@ always @ (posedge clk) begin
     posedge_clk   <=  1;
   if (!i_phy_clk && prev_clk_edge)
     negedge_clk   <=  1;
-
   prev_clk_edge     <=  i_phy_clk;
 end
 
