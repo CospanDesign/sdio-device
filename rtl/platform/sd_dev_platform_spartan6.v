@@ -74,7 +74,7 @@ module sd_dev_platform_spartan6 #(
   output                    o_sd_clk,
   output                    o_sd_clk_x2,
 
-  output                    o_posedge_stb,
+  output  reg               o_posedge_stb,
 
   input                     i_sd_cmd_dir,
   input                     i_sd_cmd_out,
@@ -129,7 +129,7 @@ pullup (io_phy_sd_data[3]);
 `endif
 
 assign    fb_locked       = o_locked && pll_locked;
-assign    o_posedge_stb   = serdes_strobe;
+//assign    o_posedge_stb   = serdes_strobe;
 //submodules
 
 //Read in the clock
@@ -512,6 +512,10 @@ endgenerate
 
 //asynchronous logic
 assign  sd_data_out = i_sd_data_out;
+
+always @ (posedge o_sd_clk_x2) begin
+  o_posedge_stb     <=  serdes_strobe;
+end
 
 //Synchronous Logic
 endmodule
