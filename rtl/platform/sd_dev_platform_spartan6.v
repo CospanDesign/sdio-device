@@ -133,7 +133,7 @@ assign    fb_locked       = o_locked && pll_locked;
 //submodules
 
 //Read in the clock
-IBUFG input_clock_buffer(
+BUFG input_clock_buffer(
   .I                    (i_phy_clk            ),
   .O                    (buf_phy_clk          )
 );
