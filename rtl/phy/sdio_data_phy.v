@@ -202,7 +202,7 @@ always @ (posedge clk_x2) begin
         if (i_write_flag) begin
           if (top_flag) begin
             crc_data[0] <=  i_sdio_data_in[4'h3];
-            crc_data[1] <=  i_sdio_data_in[4'h3];
+            crc_data[1] <=  i_sdio_data_in[4'h2];
             crc_data[2] <=  i_sdio_data_in[4'h1];
             crc_data[3] <=  i_sdio_data_in[4'h0];
           end
