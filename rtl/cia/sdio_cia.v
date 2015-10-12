@@ -82,7 +82,7 @@ module sdio_cia (
   output        [3:0]       o_fbr7_pwr_mode,
   output        [15:0]      o_fbr7_block_size,
 
-  output        [7:0]       o_fbr_select,
+  //output        [7:0]       o_fbr_select,
   output                    o_fbr_activate,
   output                    o_fbr_ready,
   output                    o_fbr_write_flag,
