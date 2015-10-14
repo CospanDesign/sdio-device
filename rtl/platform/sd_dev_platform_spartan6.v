@@ -139,171 +139,83 @@ wire  buf_phy_clk_n;
 wire  predelay_clk_p;
 wire  predelay_clk_n;
 
-/*
-IBUF clkin_buf (
-  .I                    (i_phy_clk            ),
-  .O                    (buf_clk              )
-);
-*/
-
 IBUFG input_clock_buffer_p(
-  //.I                    (buf_clk              ),
   .I                    (i_phy_clk            ),
   .O                    (buf_phy_clk_p        )
 );
-/*
-BUFG input_clock_buffer_n(
-  .I                    (buf_clk              ),
-  .O                    (buf_phy_clk_n        )
-);
 
-*/
-//assign   buf_phy_clk  = i_phy_clk;
 assign  predelay_clk_p  = buf_phy_clk_p ^ `SWAP_CLK;
-//assign  predelay_clk_n  = ~buf_phy_clk_n ^ `SWAP_CLK;
 
-
-//Delay For Clock
-IODELAY2 #(
-  .DATA_RATE            ("SDR"                ),  // Double Data Rate
-  //.DATA_RATE            ("DDR"                ),  // Double Data Rate
-  .IDELAY_VALUE         (0                    ),  // Input Delay (0 for delay)
+IODELAY2 # (
+  .DATA_RATE            ("SDR"                ),
+  .SIM_TAPDELAY_VALUE   (49                   ),
+  .IDELAY_VALUE         (0                    ),
   .IDELAY2_VALUE        (0                    ),
-  .ODELAY_VALUE         (0                    ),  // Output Delay Tap Value
-  .IDELAY_MODE          ("NORMAL"             ),  // NORMAL or PCI
-  //.SERDES_MODE          ("MASTER"             ),  // NONE, MASTER or SLAVE
-  .SERDES_MODE          ("NONE"               ),  // NONE, MASTER or SLAVE
-  .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"      ),  // <STAY_AT_LIMIT>, WRAPAROUND
-  //.IDELAY_TYPE          ("VARIABLE_FROM_HALF_MAX"),
-  .IDELAY_TYPE          ("FIXED"),
-  .DELAY_SRC            ("IDATAIN"            ),  // "IO", "IDATAIN", "ODATAIN"
-  .SIM_TAPDELAY_VALUE   (75                   )   // Simulation Tap Delay
-)clk_delay_m (
-  .IDATAIN              (predelay_clk_p       ),  // Clock Input from input buffer
-  .TOUT                 (                     ),  // Delayed Tristate
-  .DOUT                 (                     ),  // Delayed Output
-
-  .T                    (1'b1                 ),  // Tristate In
-  .ODATAIN              (1'b0                 ),  // From Logic or OSERDES
-  .DATAOUT              (phy_clk_m            ),  // Data to Logic or SERDES
-  .DATAOUT2             (                     ),  // Data to Logic or SERDES
-
-  .IOCLK0               (1'b0                 ),  // High speed clock for calibration
-  .IOCLK1               (1'b0                 ),  // High speed clock for calibration
-  .CLK                  (1'b0                 ),  // Fabric clock (GCLK) for control signals
-  .CAL                  (1'b0                 ),  // Calibrate control signal, never needed as the slave supplies the clock input to the PLL
-  .INC                  (1'b0                 ),  // Increment counter
-  .CE                   (1'b0                 ),  // Clock Enable
-  .BUSY                 (                     ),  // output signal indicating sync circuit has finished / calibration has finished
-  .RST                  (1'b0                 )   // Reset delay line
+  .ODELAY_VALUE         (0                    ),
+  .IDELAY_MODE          ("NORMAL"             ),
+  .SERDES_MODE          ("NONE"               ),
+  .IDELAY_TYPE          ("FIXED"              ),
+  .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"      ),
+  .DELAY_SRC            ("IDATAIN"            )
+) clock_iodelay (
+  .IDATAIN              (predelay_clk_p       ),
+  .TOUT                 (                     ),
+  .DOUT                 (                     ),
+  .T                    (1'b1                 ),
+  .ODATAIN              (1'b0                 ),
+  .DATAOUT              (clock_delay          ),
+  .DATAOUT2             (                     ),
+  .IOCLK0               (1'b0                 ),
+  .IOCLK1               (1'b0                 ),
+  .CLK                  (1'b0                 ),
+  .CAL                  (1'b0                 ),
+  .INC                  (1'b0                 ),
+  .CE                   (1'b0                 ),
+  .RST                  (1'b0                 ),
+  .BUSY                 (                     )
 );
 
+BUFIO2 #(
+  .DIVIDE               (1                    ),
+  .I_INVERT             ("FALSE"              ),
+  .DIVIDE_BYPASS        ("FALSE"              ),
+  .USE_DOUBLER          ("FALSE"              )
+) bufio2_clk (
+  .I                    (clock_delay          ),
+  .IOCLK                (pll_serdes_clk       ),
+  .DIVCLK               (pll_sd_clk           ),
+  .SERDESSTROBE         (serdes_strobe        )
+);
+
+BUFIO2 #(
+  .DIVIDE               (1                    ),
+  .I_INVERT             ("TRUE"               ),
+  .DIVIDE_BYPASS        ("FALSE"              ),
+  .USE_DOUBLER          ("FALSE"              )
+) bufio2_clk_n (
+  .I                    (clock_delay          ),
+  .IOCLK                (pll_serdes_clk_n     ),
+  .DIVCLK               (pll_sd_clk_n         ),
+  .SERDESSTROBE         (serdes_strobe_n      )
+);
+
+
 /*
-IODELAY2 #(
-  .DATA_RATE            ("SDR"                ),  // Double Data Rate
-  .IDELAY_VALUE         (0                    ),  // Input Delay (0 for delay)
-  .IDELAY_TYPE          ("FIXED"              ),  // DEFAULT, DIFF_PHASE_DETECTOR, FIXED, VARIABLE_FROM_HALF_MAX, VARIABLE_FROM_ZERO
-  .ODELAY_VALUE         (0                    ),  // Output Delay Tap Value
-  .IDELAY_MODE          ("NORMAL"             ),  // NORMAL or PCI
-  .SERDES_MODE          ("SLAVE"              ),  // NONE, MASTER or SLAVE
-  .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"      ),  // <STAY_AT_LIMIT>, WRAPAROUND
-  .DELAY_SRC            ("IDATAIN"            ),  // "IO", "IDATAIN", "ODATAIN"
-  .SIM_TAPDELAY_VALUE   (75                   )   // Simulation Tap Delay
-)clk_delay_s (
-  .IDATAIN              (predelay_clk_p       ),  // Clock Input from input buffer
-  .TOUT                 (                     ),  // Delayed Tristate
-  .DOUT                 (                     ),  // Delayed Output
-
-  .T                    (1'b1                 ),  // Tristate In
-  .ODATAIN              (1'b0                 ),  // From Logic or OSERDES
-  .DATAOUT              (phy_clk_s            ),  // Data to Logic or SERDES
-  .DATAOUT2             (                     ),  // Data to Logic or SERDES
-
-  .IOCLK0               (1'b0                 ),  // High speed clock for calibration
-  .IOCLK1               (1'b0                 ),  // High speed clock for calibration
-  .CLK                  (1'b0                 ),  // Fabric clock (GCLK) for control signals
-  .CAL                  (1'b0                 ),  // Calibrate control signal, never needed as the slave supplies the clock input to the PLL
-  .INC                  (1'b0                 ),  // Increment counter
-  .CE                   (1'b0                 ),  // Clock Enable
-  .BUSY                 (                     ),  // output signal indicating sync circuit has finished / calibration has finished
-  .RST                  (1'b0                 )   // Reset delay line
+BUFIO2_2CLK #(
+//  .DIVIDE               (1                    )
+//  .I_INVERT             ("FALSE"              ),
+//  .DIVIDE_BYPASS        ("FALSE"              ),
+//  .USE_DOUBLER          ("FALSE"               )
+) bufio2_clk (
+  .I                    (clock_delay          ),
+  .IOCLK                (pll_serdes_clk       ),
+  .DIVCLK               (pll_sd_clk           ),
+  .SERDESSTROBE         (serdes_strobe        )
 );
 */
 
-//Bridge Between IODELAY and PLL
-BUFIO2 #(
-  .DIVIDE_BYPASS        ("TRUE"               ),
-  .I_INVERT             ("FALSE"              ),
-  .USE_DOUBLER          ("FALSE"              ),
-  //.DIVIDE               (2                    )
-  .DIVIDE               (1                    )
-)clock_bufio(
-  //Input
-  //.I                    (phy_clk_s            ),
-  .I                    (data_clk_pre         ),
 
-  //Output
-  .DIVCLK               (data_clk             ),
-  .IOCLK                (                     ),
-  .SERDESSTROBE         (                     )
-);
 
-BUFIO2FB clkfb_buf(
-  .I                    (feedback             ),
-  .O                    (serdes_clk_fb        )
-);
-
-PLL_ADV #(
-  .BANDWIDTH            ("OPTIMIZED"          ),
-  .CLKFBOUT_MULT        (2                    ),
-  .CLK_FEEDBACK         ("CLKOUT0"            ),
-  //.CLK_FEEDBACK         ("CLKFBOUT"           ),
-  .CLKFBOUT_PHASE       (0.000                ),
-  .CLKIN1_PERIOD        (20.000               ),
-  .CLKIN2_PERIOD        (0.00                 ),
-  .CLKOUT0_DIVIDE       (4                    ),
-  .CLKOUT0_DUTY_CYCLE   (0.500                ),
-  .CLKOUT0_PHASE        (0.00                 ),
-  .CLKOUT1_DIVIDE       (8                    ),
-  .CLKOUT1_DUTY_CYCLE   (0.500                ),
-  .CLKOUT1_PHASE        (0.00                 ),
-  .CLKOUT2_DIVIDE       (1                    ),
-  .CLKOUT2_DUTY_CYCLE   (0.500                ),
-  .CLKOUT2_PHASE        (0.00                 ),
-  .CLKOUT3_DIVIDE       (1                    ),
-  .CLKOUT3_DUTY_CYCLE   (0.500                ),
-  .CLKOUT3_PHASE        (0.00                 ),
-  .CLKOUT4_DIVIDE       (1                    ),
-  .CLKOUT4_DUTY_CYCLE   (0.500                ),
-  .CLKOUT4_PHASE        (0.00                 ),
-  .CLKOUT5_DIVIDE       (1                    ),
-  .CLKOUT5_DUTY_CYCLE   (0.500                ),
-  .CLKOUT5_PHASE        (0.00                 ),
-  .COMPENSATION         ("SYSTEM_SYNCHRONOUS" ),
-  .DIVCLK_DIVIDE        (1                    ),
-  .REF_JITTER           (0.010                )
-) pll (
-  //Input Clock and Input Clock Control
-  .RST                  (rst                  ),
-  .REL                  (1'b0                 ),
-  .DWE                  (1'b0                 ),
-  .DI                   (16'h0000             ),
-  .DEN                  (1'b0                 ),
-  .DCLK                 (1'b0                 ),
-  .DADDR                (5'h00                ),
-  .CLKINSEL             (1'b1                 ),
-  .CLKFBIN              (serdes_clk_fb        ),
-  .CLKFBOUT             (clkfbout             ),
-  //.CLKFBOUT             (                     ),
-
-  //.CLKIN                (clk                  ),
-  .CLKIN1               (data_clk             ),
-
-  //Status/Control
-  .LOCKED               (pll_locked           ),
-  .CLKOUT0              (pll_serdes_clk       ),
-  .CLKOUT1              (pll_sd_clk           )
-);
 
 //Clock will be used to drive both the output and the internal state machine
 BUFG sd_clk_bufg(
