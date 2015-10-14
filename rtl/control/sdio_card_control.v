@@ -163,7 +163,7 @@ assign  r5_cmd      = (state == RESET) || (state == INITIALIZE) || (state == STA
                                                                                                                2'b11;
 
 //assign  o_func_host_rdy = i_cmd_phy_idle; /* Can only send data when i_cmd phy is not sending data */
-assign  cia_activate  = (o_func_num == 0);
+//assign  cia_activate  = (o_func_num == 0);
 assign  o_mem_en      = 1'b0;
 assign  o_interrupt   = ((i_func_interrupt & i_func_interrupt_en) > 0);
 
