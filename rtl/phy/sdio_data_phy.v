@@ -81,7 +81,6 @@ reg               [3:0]   crc_state;
 
 reg               [12:0]  data_count;
 wire                      data_crc_good;
-//reg                       posedge_clk;
 reg               [3:0]   crc_bit;
 wire              [15:0]  crc_out [0:3];
 
@@ -121,6 +120,7 @@ integer                   i;
 genvar g;
 generate
 for (g = 0; g < 4; g = g + 1) begin : data_crc
+/*
 crc16 crc (
   .clk                (clk_x2                       ),
   .rst                (crc_main_rst                 ),
@@ -128,6 +128,16 @@ crc16 crc (
   .bit                (crc_data[g]                  ),
   .crc                (crc_out[g]                   )
 );
+*/
+crc16_2bit (
+  .clk                (clk                          ),
+  .rst                (crc_main_rst                 ),
+  .en                 (crc_main_en                  ),
+  .bit1               (crc_data[g]                  ),
+  .bit0               (crc_data[g]                  ),
+  .crc                (crc_out[g]                   )
+);
+
 end
 endgenerate
 
@@ -149,33 +159,12 @@ assign  sdio_data1    = crc_data[1];
 assign  sdio_data2    = crc_data[2];
 assign  sdio_data3    = crc_data[3];
 
-assign  o_data_wr_data = o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
-assign  data_crc_good  =  ( (host_crc[0] == crc_out[0]) &&
-                            (host_crc[1] == crc_out[1]) &&
-                            (host_crc[2] == crc_out[2]) &&
-                            (host_crc[3] == crc_out[3]));
-
-
+assign  o_data_wr_data= o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
+assign  data_crc_good =  ( (host_crc[0] == crc_out[0]) &&
+                           (host_crc[1] == crc_out[1]) &&
+                           (host_crc[2] == crc_out[2]) &&
+                           (host_crc[3] == crc_out[3]));
 reg     top_flag;
-
-
-
-
-/*
-assign  crc_data[0]   = i_write_flag   ?
-                           !clk        ? i_sdio_data_in[4'h7] : i_sdio_data_in[4'h3]:
-                           clk         ? i_data_rd_data[4'h7] : i_data_rd_data[4'h3];
-assign  crc_data[1]   = i_write_flag   ?
-                           !clk        ? i_sdio_data_in[4'h6] : i_sdio_data_in[4'h2]:
-                           clk         ? i_data_rd_data[4'h6] : i_data_rd_data[4'h2];
-assign  crc_data[2]   = i_write_flag   ?
-                           !clk        ? i_sdio_data_in[4'h5] : i_sdio_data_in[4'h1]:
-                           clk         ? i_data_rd_data[4'h5] : i_data_rd_data[4'h1];
-assign  crc_data[3]   = i_write_flag   ?
-                          !clk        ? i_sdio_data_in[4'h4] : i_sdio_data_in[4'h0]:
-                          clk         ? i_data_rd_data[4'h4] : i_data_rd_data[4'h0];
-*/
-
 
 //CRC State Machine
 always @ (posedge clk_x2) begin
@@ -201,31 +190,31 @@ always @ (posedge clk_x2) begin
       PROCESS_CRC: begin
         if (i_write_flag) begin
           if (top_flag) begin
-            crc_data[0] <=  i_sdio_data_in[4'h3];
-            crc_data[1] <=  i_sdio_data_in[4'h2];
-            crc_data[2] <=  i_sdio_data_in[4'h1];
-            crc_data[3] <=  i_sdio_data_in[4'h0];
+            crc_data[0]       <=  i_sdio_data_in[4'h3];
+            crc_data[1]       <=  i_sdio_data_in[4'h2];
+            crc_data[2]       <=  i_sdio_data_in[4'h1];
+            crc_data[3]       <=  i_sdio_data_in[4'h0];
           end
           else begin
-            crc_data[0] <=  i_sdio_data_in[4'h7];
-            crc_data[1] <=  i_sdio_data_in[4'h6];
-            crc_data[2] <=  i_sdio_data_in[4'h5];
-            crc_data[3] <=  i_sdio_data_in[4'h4];
+            crc_data[0]       <=  i_sdio_data_in[4'h7];
+            crc_data[1]       <=  i_sdio_data_in[4'h6];
+            crc_data[2]       <=  i_sdio_data_in[4'h5];
+            crc_data[3]       <=  i_sdio_data_in[4'h4];
           end
         end
         else begin
           //Read Flag
           if (top_flag) begin
-            crc_data[0] <=  i_data_rd_data[4'h3];
-            crc_data[1] <=  i_data_rd_data[4'h3];
-            crc_data[2] <=  i_data_rd_data[4'h1];
-            crc_data[3] <=  i_data_rd_data[4'h0];
+            crc_data[0]       <=  i_data_rd_data[4'h3];
+            crc_data[1]       <=  i_data_rd_data[4'h3];
+            crc_data[2]       <=  i_data_rd_data[4'h1];
+            crc_data[3]       <=  i_data_rd_data[4'h0];
           end
           else begin
-            crc_data[0] <=  i_data_rd_data[4'h7];
-            crc_data[1] <=  i_data_rd_data[4'h6];
-            crc_data[2] <=  i_data_rd_data[4'h5];
-            crc_data[3] <=  i_data_rd_data[4'h4];
+            crc_data[0]       <=  i_data_rd_data[4'h7];
+            crc_data[1]       <=  i_data_rd_data[4'h6];
+            crc_data[2]       <=  i_data_rd_data[4'h5];
+            crc_data[3]       <=  i_data_rd_data[4'h4];
           end
         end
         if (!capture_crc) begin
@@ -254,22 +243,6 @@ always @ (posedge clk)begin
     buffered_read_data        <=  i_data_rd_data;
   end
 end
-
-/*
-always @ (posedge clk_x2) begin
-  if (rst) begin
-    posedge_clk               <=  0;
-  end
-  else begin
-    if (clk) begin
-      posedge_clk             <=  1;
-    end
-    else begin
-      posedge_clk             <=  0;
-    end
-  end
-end
-*/
 
 always @ (posedge clk) begin
   if (rst) begin
@@ -303,7 +276,7 @@ always @ (posedge clk) begin
         data_count            <=  0;
         if (i_interrupt) begin
           o_sdio_data_dir     <=  1;
-          read_data           <=  8'hFD; 
+          read_data           <=  8'hFD;
         end
         else begin
           o_sdio_data_dir     <=  0;
