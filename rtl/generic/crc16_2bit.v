@@ -63,31 +63,30 @@ wire         inv0;
 wire         inv1;
 //submodules
 //asynchronous logic
-assign inv0 = bit0 ^ crc[15];
-assign inv1 = bit1 ^ crc[14];
+assign inv1 = bit1 ^ crc[15];
+assign inv0 = (bit0 ^ crc[14]);
 
 always @ (posedge clk) begin
   if (rst) begin
-    //crc  <=  SEED;
     crc  <=  0;
   end
   else begin
     //Shift the output value
     if (en) begin
-      crc[15] <= crc[14];
-      crc[14] <= crc[13];
-      crc[13] <= crc[12];
-      crc[12] <= crc[11] ^ inv1;
-      crc[11] <= crc[10] ^ inv0;
-      crc[10] <= crc[9];
-      crc[9]  <= crc[8];
-      crc[8]  <= crc[7];
-      crc[7]  <= crc[6];
-      crc[6]  <= crc[5];
-      crc[5]  <= crc[4] ^ inv1;
-      crc[4]  <= crc[3] ^ inv0;
-      crc[3]  <= crc[2];
-      crc[2]  <= crc[1];
+      crc[15] <= crc[13];
+      crc[14] <= crc[12];
+      crc[13] <= crc[11] ^ inv1;
+      crc[12] <= crc[10] ^ inv0;
+      crc[11] <= crc[9];
+      crc[10] <= crc[8];
+      crc[9]  <= crc[7];
+      crc[8]  <= crc[6];
+      crc[7]  <= crc[5];
+      crc[6]  <= crc[4] ^ inv1;
+      crc[5]  <= crc[3] ^ inv0;
+      crc[4]  <= crc[2];
+      crc[3]  <= crc[1];
+      crc[2]  <= crc[0];
       crc[1]  <= inv1;
       crc[0]  <= inv0;
     end

@@ -119,8 +119,6 @@ wire                        clkfb;
 wire                        fb_locked;
 wire                        serdes_clk_fb;
 
-
-
 `ifdef SIMULATION
 pullup (io_phy_sd_data[0]);
 pullup (io_phy_sd_data[1]);
