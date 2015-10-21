@@ -32,7 +32,6 @@ SOFTWARE.
 
 module sdio_data_phy (
   input                   clk,
-  input                   clk_x2,
   input                   rst,
   input                   i_posedge_stb,
   input                   i_interrupt,
@@ -162,7 +161,7 @@ assign  data_crc_good =  ( (host_crc[0] == crc_out[0]) &&
 reg     top_flag;
 
 //CRC State Machine
-always @ (posedge clk_x2) begin
+always @ (posedge clk) begin
   if (rst) begin
     crc_rst                   <=  1;
     crc_state                 <=  IDLE;

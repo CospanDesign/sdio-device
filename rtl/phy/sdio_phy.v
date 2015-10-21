@@ -86,7 +86,6 @@ crc7 crc_gen (
 
 sdio_data_phy data_phy(
   .clk                (i_sdio_clk      ),
-  .clk_x2             (i_sdio_clk_x2   ),
   .rst                (rst             ),
   .i_interrupt        (i_interrupt     ),
   .i_posedge_stb      (i_posedge_stb   ),
