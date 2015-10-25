@@ -83,6 +83,10 @@ module sd_dev_platform_spartan6 #(
   input           [7:0]     i_sd_data_out,
   output          [7:0]     o_sd_data_in,
 
+  //Configuration
+  input                     i_cfg_inc,
+  input                     i_cfg_en,
+
   input                     i_phy_clk,
   inout                     io_phy_sd_cmd,
   inout           [3:0]     io_phy_sd_data
@@ -114,20 +118,10 @@ wire                        serdes_strobe;
 wire                        phy_clk_s;
 wire                        pll_phy_clk;
 wire                        clkfb;
-wire                        fb_locked;
 wire                        serdes_clk_fb;
 
-`ifdef SIMULATION
-pullup (io_phy_sd_data[0]);
-pullup (io_phy_sd_data[1]);
-pullup (io_phy_sd_data[2]);
-pullup (io_phy_sd_data[3]);
-`endif
 
-//assign    fb_locked       = o_locked && pll_locked;
 //assign    o_locked        = 1;
-assign    fb_locked       = 1;
-assign    o_locked        = !rst;
 //submodules
 
 //Read in the clock
@@ -139,72 +133,34 @@ wire  predelay_clk_n;
 
 wire  clock_delay_p;
 wire  clock_delay_n;
+reg   user_reset;
+initial begin
+  user_reset  <=  1;
+  count       <=  0;
+end
 
 IBUFG input_clock_buffer_p(
   .I                    (i_phy_clk            ),
-  //.O                    (buf_phy_clk          )
   .O                    (o_sd_clk             )
 );
-/*
-assign  predelay_clk_p  =  buf_phy_clk ^ `SWAP_CLK;
-//assign  predelay_clk_n  = ~buf_phy_clk ^ `SWAP_CLK;
-
-IODELAY2 # (
-  .DATA_RATE            ("SDR"                ),
-  .SIM_TAPDELAY_VALUE   (49                   ),
-  .IDELAY_VALUE         (0                    ),
-  .IDELAY2_VALUE        (0                    ),
-  .ODELAY_VALUE         (0                    ),
-  .IDELAY_MODE          ("NORMAL"             ),
-  //.SERDES_MODE          ("MASTER"             ),
-  .SERDES_MODE          ("NONE"               ),
-  .IDELAY_TYPE          ("FIXED"              ),
-  .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"      ),
-  .DELAY_SRC            ("IDATAIN"            )
-) clock_iodelay_m (
-  .IDATAIN              (predelay_clk_p       ),
-  .TOUT                 (                     ),
-  .DOUT                 (                     ),
-  .T                    (1'b1                 ),
-  .ODATAIN              (1'b0                 ),
-  .DATAOUT              (clock_delay_p        ),
-  .DATAOUT2             (                     ),
-  .IOCLK0               (1'b0                 ),
-  .IOCLK1               (1'b0                 ),
-  .CLK                  (1'b0                 ),
-  .CAL                  (1'b0                 ),
-  .INC                  (1'b0                 ),
-  .CE                   (1'b0                 ),
-  .RST                  (1'b0                 ),
-  .BUSY                 (                     )
-);
-BUFG pos_clk_buf (
-  .I                    (clock_delay_p        ),
-  .O                    (o_sd_clk             )
-);
-*/
 
 //Control Line
 IOBUF
 #(
   .IOSTANDARD           ("LVCMOS33"           )
-)
-cmd_iobuf(
+)cmd_iobuf(
   .T                    (sd_cmd_tristate_dly  ),
   .O                    (sd_cmd_in_delay      ),
   .I                    (sd_cmd_out_delay     ),
   .IO                   (io_phy_sd_cmd        )
 );
 
-`ifdef SIMULATION
-pullup (io_phy_sd_cmd);
-`endif
-
 IODELAY2 #(
   .DATA_RATE            ("SDR"                ),
   .IDELAY_VALUE         (INPUT_DELAY          ),
   .ODELAY_VALUE         (OUTPUT_DELAY         ),
   .IDELAY_TYPE          ("FIXED"              ),
+  //.IDELAY_TYPE          ("VARIABLE_FROM_ZERO" ),
   .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"      ),
   .DELAY_SRC            ("IO"                 ),
   .SERDES_MODE          ("NONE"               ),
@@ -214,20 +170,22 @@ IODELAY2 #(
   .ODATAIN              (i_sd_cmd_out         ),
   //.DATAOUT              (o_sd_cmd_in          ),
   .DATAOUT2             (o_sd_cmd_in          ),
+
   //FPGA Fabric
   //IOB
   .TOUT                 (sd_cmd_tristate_dly  ),
   .IDATAIN              (sd_cmd_in_delay      ),
   .DOUT                 (sd_cmd_out_delay     ),
-
-  .IOCLK0               (1'b0                 ),  //XXX: This one is not SERDESized.. Do I need to add a clock??
-  .IOCLK1               (1'b0                 ),
-  .CLK                  (1'b0                 ),
   .CAL                  (1'b0                 ),
-  .INC                  (1'b0                 ),
-  .CE                   (1'b0                 ),
   .BUSY                 (                     ),
-  .RST                  (1'b0                 )
+
+  .IOCLK0               (clk                  ),  //XXX: This one is not SERDESized.. Do I need to add a clock??
+  .IOCLK1               (1'b0                 ),
+
+  .CLK                  (clk                  ),
+  .INC                  (i_cfg_inc            ),
+  .CE                   (i_cfg_en             ),
+  .RST                  (rst                  )
 );
 
 //DATA Lines
@@ -275,6 +233,7 @@ IODELAY2 #(
   .CE                   (1'b0                             ),
   .BUSY                 (                                 ),
   .RST                  (1'b0                             )
+  //.RST                  (rst                              )
 );
 
 IDDR2 #(
@@ -317,6 +276,28 @@ endgenerate
 
 //asynchronous logic
 assign  sd_data_out = i_sd_data_out;
+assign  o_locked    = !user_reset;
+
+
+//Synchronous Logic
+reg [7:0] count;
+always @ (posedge clk) begin
+  if (rst) begin
+    count                 <=  0;
+    user_reset            <=  1;
+  end
+  else begin
+    if (count < 4) begin
+      count               <=  count + 1;
+    end
+    else begin
+      count               <=  0;
+      user_reset          <=  0;
+    end
+  end
+end
+
+
 
 //Synchronous Logic
 endmodule

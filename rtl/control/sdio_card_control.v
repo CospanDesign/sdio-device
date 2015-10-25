@@ -73,6 +73,9 @@ module sdio_card_control (
   // tunning block
   output  reg               o_tunning_block,
 
+  //Debug
+  output        [3:0]       o_state,
+
   //PHY Interface
   input                     i_cmd_stb,
   input                     i_cmd_crc_good_stb,
@@ -133,6 +136,8 @@ wire                        data_txrx_in_progress_flag;
 
 reg             [3:0]       component_select;
 reg                         rsps_stb;
+reg                         rsps_fail;
+
 
 reg                         direct_read_write;  //Read/Write using command channel
 reg             [17:0]      data_count;
@@ -168,6 +173,9 @@ assign  o_mem_en      = 1'b0;
 assign  o_interrupt   = ((i_func_interrupt & i_func_interrupt_en) > 0);
 
 //synchronous logic
+initial begin
+  state               <=  RESET;
+end
 always @ (posedge sdio_clk) begin
   o_rsps_stb                <=  0;
   if (rst) begin
@@ -280,6 +288,11 @@ always @ (posedge sdio_clk) begin
     o_rsps_fail                     <=  1;
     //Do not send a response
   end
+  else if (o_rsps_fail) begin
+    if (i_cmd_phy_idle) begin
+      o_rsps_fail                   <=  0;
+    end
+  end
   else    //Strobe
     if (rsps_stb) begin
       //Whenever a response is successful de-assert any of the errors, they will have been picked up by the response
@@ -287,13 +300,33 @@ always @ (posedge sdio_clk) begin
       cmd_arg_out_of_range          <=  0;
       illegal_command               <=  0;
       card_error                    <=  0;  //Unknown Error
-      o_rsps_fail                   <=  0;
     end
     //Card Bootup Sequence
     case (state)
       RESET: begin
         //o_func_host_rdy             <= 0;
         o_cmd_bus_sel               <= 1;
+        register_card_address       <=  16'h0001;       // Initializes the RCA to 0
+        voltage_select              <=  `OCR_VALUE;
+        v1p8_sel                    <=  0;
+        bad_crc                     <=  0;
+        cmd_arg_out_of_range        <=  0;
+        illegal_command             <=  0;              //Illegal Command for the Given State
+        card_error                  <=  0;              //Unknown Error
+        o_func_inc_addr             <=  0;
+        o_func_block_mode           <=  0;
+        o_func_num                  <=  4'h0;
+        o_func_write_flag           <=  0;              /* Read Write Flag R = 0, W = 1 */
+        o_func_rd_after_wr          <=  0;
+        o_func_addr                 <=  18'h0;
+        o_func_write_data           <=  8'h00;
+        o_func_data_count           <=  12'h00;
+        data_count                  <=  0;
+        response_index              <=  0;
+        o_tunning_block             <=  0;
+        //o_func_host_rdy             <=  0;
+        cmd_data                    <=  0;
+        o_rsps_fail                 <=  0;
         state                       <= INITIALIZE;
       end
       INITIALIZE: begin
@@ -487,6 +520,7 @@ always @ (posedge sdio_clk) begin
           response_index            <=  R1;
           if (!i_chip_select_n) begin
             //XXX: SPI MODE IS NOT SUPPORTED YET!!!
+            o_rsps_fail             <=  1;
           end
           else begin
             //We are in SD Mode
@@ -514,5 +548,7 @@ always @ (posedge sdio_clk) begin
       endcase
   end
 end
+
+assign  o_state                     =  state;
 
 endmodule

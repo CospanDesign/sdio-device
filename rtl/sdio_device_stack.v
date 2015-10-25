@@ -47,7 +47,6 @@ SOFTWARE.
 module sdio_device_stack (
 
   input                     sdio_clk,
-  input                     sdio_clk_x2,
   input                     rst,
 
   output                    o_mem_en,
@@ -171,13 +170,20 @@ module sdio_device_stack (
 
   input           [7:0]     i_interrupt,
 
-  //Platform Spectific posedge strobe
-  input                     i_phy_posedge_stb,
+  //Debug Interface
+  output          [5:0]     o_sd_cmd,
+  output          [31:0]    o_sd_cmd_arg,
+  output                    o_sd_cmd_stb,
+  output                    o_sd_phy_idle,
+  output          [3:0]     o_sd_phy_state,
+  output          [3:0]     o_sd_control_state,
 
   //FPGA Interface
   output                    o_sd_cmd_dir,
   input                     i_sd_cmd_in,
   output                    o_sd_cmd_out,
+  output          [7:0]     o_gen_crc,
+  output          [7:0]     o_rmt_crc,
 
   output                    o_sd_data_dir,
   output          [7:0]     o_sd_data_out,
@@ -187,98 +193,94 @@ module sdio_device_stack (
 
 //local parameters
 //registes/wires
-wire        [3:0]   sdio_state;
-wire                sdio_cmd_in;
-wire                sdio_cmd_out;
-wire                sdio_cmd_dir;
+wire               [3:0]   sdio_state;
+wire                       sdio_cmd_in;
+wire                       sdio_cmd_out;
+wire                       sdio_cmd_dir;
 
-wire        [3:0]   sdio_data_in;
-wire        [3:0]   sdio_data_out;
-wire                sdio_data_dir;
+wire               [3:0]   sdio_data_in;
+wire               [3:0]   sdio_data_out;
+wire                       sdio_data_dir;
 
 //Phy Configuration
-wire                spi_phy;
-wire                sd1_phy;
-wire                sd4_phy;
+wire                       spi_phy;
+wire                       sd1_phy;
+wire                       sd4_phy;
 
 //Phy Interface
-wire                cmd_phy_idle;
-wire                cmd_stb;
-wire                cmd_crc_stb;
-wire        [5:0]   cmd;
-wire        [31:0]  cmd_arg;
-wire        [17:0]  cmd_addr;
-wire        [12:0]  cmd_data_cnt;
+wire                       cmd_phy_idle;
+wire                       cmd_stb;
+wire                       cmd_crc_stb;
+wire               [5:0]   cmd;
+wire               [31:0]  cmd_arg;
+wire               [17:0]  cmd_addr;
+wire               [12:0]  cmd_data_cnt;
 
-wire        [39:0]  rsps;
-wire        [7:0]   rsps_len;
-wire                rsps_fail;
-wire                rsps_idle;
+wire               [39:0]  rsps;
+wire               [7:0]   rsps_len;
+wire                       rsps_fail;
+wire                       rsps_idle;
 
-wire                interrupt;
-wire                chip_select_n;
+wire                       interrupt;
+wire                       chip_select_n;
 
 //Function Level
-wire                cmd_bus_sel;
-
-wire                tunning_block;
-
-wire                soft_reset;
+wire                       cmd_bus_sel;
+wire                       tunning_block;
+wire                       soft_reset;
 
 //SDIO Configuration Flags
-wire                en_card_detect_n;
-wire                en_4bit_block_int;
-wire                bus_release_req_stb;
-wire        [15:0]  f0_block_size;
+wire                       en_card_detect_n;
+wire                       en_4bit_block_int;
+wire                       bus_release_req_stb;
+wire               [15:0]  f0_block_size;
 
-wire                cfg_1_bit_mode;
-wire                cfg_4_bit_mode;
-wire                cfg_8_bit_mode;
+wire                       cfg_1_bit_mode;
+wire                       cfg_4_bit_mode;
+wire                       cfg_8_bit_mode;
 
-wire                sdr_12;
-wire                sdr_25;
-wire                sdr_50;
-wire                ddr_50;
-wire                sdr_104;
+wire                       sdr_12;
+wire                       sdr_25;
+wire                       sdr_50;
+wire                       ddr_50;
+wire                       sdr_104;
 
-wire                driver_type_a;
-wire                driver_type_b;
-wire                driver_type_c;
-wire                driver_type_d;
-wire                enable_async_interrupt;
+wire                       driver_type_a;
+wire                       driver_type_b;
+wire                       driver_type_c;
+wire                       driver_type_d;
+wire                       enable_async_interrupt;
 
+wire               [7:0]   func_int_enable;
+wire               [7:0]   func_int_pending;
+wire                       data_bus_busy;
+wire                       data_read_avail;
 
-wire        [7:0]   i_func_ready;
-wire        [7:0]   func_int_enable;
-wire        [7:0]   func_int_pending;
-wire                data_bus_busy;
-wire                data_read_avail;
+wire               [7:0]   cmd_func_write_data;
+wire               [7:0]   cmd_func_read_data;
+wire                       cmd_func_data_rdy;
+wire                       cmd_func_host_rdy;
+wire               [17:0]  cmd_func_data_count;
+wire                       cmd_func_activate;
+wire                       cmd_func_finished;
 
-wire        [7:0]   cmd_func_write_data;
-wire        [7:0]   cmd_func_read_data;
-wire                cmd_func_data_rdy;
-wire                cmd_func_host_rdy;
-wire        [17:0]  cmd_func_data_count;
-wire                cmd_func_activate;
-wire                cmd_func_finished;
+wire                       data_phy_activate;
+wire                       data_phy_finished;
+wire                       data_phy_wr_stb;
+wire               [7:0]   data_phy_wr_data;
+wire                       data_phy_rd_stb;
+wire               [7:0]   data_phy_rd_data;
+wire                       data_phy_hst_rdy;
+wire                       data_phy_com_rdy;
 
-wire                data_phy_activate;
-wire                data_phy_finished;
-wire                data_phy_wr_stb;
-wire        [7:0]   data_phy_wr_data;
-wire                data_phy_rd_stb;
-wire        [7:0]   data_phy_rd_data;
-wire                data_phy_hst_rdy;
-wire                data_phy_com_rdy;
-
-wire                cia_wr_stb;
-wire        [7:0]   cia_wr_data;
-wire                cia_rd_stb;
-wire        [7:0]   cia_rd_data;
-wire                cia_hst_rdy;
-wire                cia_com_rdy;
-wire                cia_activate;
-wire                cia_finished;
+wire                       cia_wr_stb;
+wire               [7:0]   cia_wr_data;
+wire                       cia_rd_stb;
+wire               [7:0]   cia_rd_data;
+wire                       cia_hst_rdy;
+wire                       cia_com_rdy;
+wire                       cia_activate;
+wire                       cia_finished;
 
 
 //Submodules
@@ -286,7 +288,7 @@ sdio_card_control card_controller (
 
   .sdio_clk                 (sdio_clk                   ),/* Run from the SDIO Clock */
   .rst                      (rst                        ),
-  .i_soft_reset             (i_soft_reset               ),
+  .i_soft_reset             (soft_reset                 ),
   .i_func_interrupt         (i_interrupt                ),
   .i_func_interrupt_en      (func_int_enable            ),
   .o_interrupt              (interrupt                  ),
@@ -316,6 +318,8 @@ sdio_card_control card_controller (
   .i_cmd_arg                (cmd_arg                    ),/* PHY -> CMD: Command Arg */
 
   .i_chip_select_n          (chip_select_n              ),/* Chip Select used to determine if this is a SPI host */
+
+  .o_state                  (o_sd_control_state         ),
 
   .o_rsps                   (rsps                       ),/* Response Generated by this layer*/
   .o_rsps_len               (rsps_len                   ),/* Length of response*/
@@ -545,7 +549,6 @@ sdio_cia cia (
 
 sdio_device_phy phy(
   .rst                      (rst                        ),
-  .i_posedge_stb            (i_phy_posedge_stb          ),
 
   //Configuration
   .i_spi_phy                (spi_phy                    ),/* Flag: SPI PHY (not supported now) */
@@ -583,11 +586,15 @@ sdio_device_phy phy(
 
   //FPGA Interface
   .i_sdio_clk               (sdio_clk                   ),
-  .i_sdio_clk_x2            (sdio_clk_x2                ),
 
   .o_sdio_cmd_dir           (o_sd_cmd_dir               ),
   .i_sdio_cmd_in            (i_sd_cmd_in                ),
   .o_sdio_cmd_out           (o_sd_cmd_out               ),
+
+  //FPGA Debug Interface
+  .o_state                  (o_sd_phy_state             ),
+  .o_gen_crc                (o_gen_crc                  ),
+  .o_rmt_crc                (o_rmt_crc                  ),
 
   .o_sdio_data_dir          (o_sd_data_dir              ),
   .i_sdio_data_in           (i_sd_data_in               ),
@@ -595,16 +602,18 @@ sdio_device_phy phy(
 
 );
 
-
 //asynchronous logic
 /*
 assign  sdio_cmd      = sdio_cmd_dir  ? sdio_cmd_out  : sdio_cmd_in;
 assign  sdio_data     = sdio_data_dir ? sdio_data_out : sdio_data_in;
-assign  chip_select_n = sdio_data[3];
 */
+
+assign  chip_select_n     = i_sd_data_in[4];
 assign  func_int_pending  = i_interrupt;
-
-
+assign  o_sd_cmd          = cmd;
+assign  o_sd_cmd_arg      = cmd_arg;
+assign  o_sd_cmd_stb      = cmd_stb;
+assign  o_sd_phy_idle     = cmd_phy_idle;
 //synchronous logic
-
 endmodule
+

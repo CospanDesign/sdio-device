@@ -2,7 +2,6 @@
 
 module sdio_device_phy (
   input               rst,
-  input               i_posedge_stb,
 
   //Configuration
   input               i_ddr_en,
@@ -40,11 +39,16 @@ module sdio_device_phy (
   input               i_data_com_rdy,
   //FPGA Interface
   input               i_sdio_clk,
-  input               i_sdio_clk_x2,
 
   output  reg         o_sdio_cmd_dir,
   input               i_sdio_cmd_in,
   output  reg         o_sdio_cmd_out,
+
+  //FPGA Debug Interface
+  output  [3:0]       o_state,
+  output  reg [7:0]   o_gen_crc,
+  output  reg [7:0]   o_rmt_crc,
+
 
   output              o_sdio_data_dir,
   input   [7:0]       i_sdio_data_in,
@@ -88,8 +92,6 @@ sdio_data_phy data_phy(
   .clk                (i_sdio_clk      ),
   .rst                (rst             ),
   .i_interrupt        (i_interrupt     ),
-  .i_posedge_stb      (i_posedge_stb   ),
-
   .i_ddr_en           (i_ddr_en        ),
   .i_spi_phy          (i_spi_phy       ),
   .i_sd1_phy          (i_sd1_phy       ),
@@ -137,13 +139,14 @@ always @ (posedge i_sdio_clk) begin
     crc_en            <=  0;
     crc_rst           <=  1;
     lcl_rsps          <=  0;
+    o_gen_crc         <=  0;
+    o_rmt_crc         <=  0;
   end
   else begin
     //strobes
     o_cmd_stb         <=  0;
     o_cmd_crc_good_stb<=  0;
     crc_rst           <=  0;
-
     //Incrementing bit count
     if (busy) begin
       bit_count         <=  bit_count + 1;
@@ -151,6 +154,8 @@ always @ (posedge i_sdio_clk) begin
     else begin
       bit_count         <=  0;
     end
+
+
     case (state)
       IDLE: begin
         o_rsps_idle     <=  1;
@@ -183,27 +188,17 @@ always @ (posedge i_sdio_clk) begin
           r_crc         <=  {r_crc[5:0], i_sdio_cmd_in};
         else begin    //Last Bit
           r_crc         <=  {r_crc[5:0], i_sdio_cmd_in};
-          /*
-          if (r_crc == crc)
-            o_cmd_crc_good_stb    <=  1;
-          crc_rst         <=  1;
-          o_cmd_stb       <=  1;
-          bit_count       <=  0;
-          o_sdio_cmd_dir  <=  1;
-          o_sdio_cmd_out  <=  1;
-          */
           state         <=  RESPONSE_DIR_BIT;
         end
       end
       RESPONSE_DIR_BIT: begin
         //Test
+        o_gen_crc               <=  {1'b0, crc};
+        o_rmt_crc               <=  {1'b0, r_crc};
         if (r_crc == crc) begin
           o_cmd_crc_good_stb    <=  1;
           crc_rst               <=  1;
         end
-
-
-        //$display("CMD:Args %h:%h", o_cmd, o_cmd_arg);
         o_cmd_stb               <=  1;
         o_sdio_cmd_out          <=  1;
         o_sdio_cmd_dir          <=  1;
@@ -229,6 +224,7 @@ always @ (posedge i_sdio_clk) begin
         end
       end
       RESPONSE_FIRST_CRC: begin
+        o_gen_crc               <=  {1'b0, crc};
         o_sdio_cmd_out          <=  crc[6];
         r_crc                   <=  {crc[5:0], 1'b0};
         state                   <=  RESPONSE_CRC;
@@ -249,11 +245,11 @@ always @ (posedge i_sdio_clk) begin
         state                   <=  IDLE;
       end
     endcase
-
     if (i_rsps_fail) begin
       //Do not respond when we detect a fail
       state                     <=  IDLE;
     end
   end
 end
+assign  o_state   = state;
 endmodule

@@ -33,7 +33,6 @@ SOFTWARE.
 module sdio_data_phy (
   input                   clk,
   input                   rst,
-  input                   i_posedge_stb,
   input                   i_interrupt,
 
   //Configuration
@@ -56,6 +55,7 @@ module sdio_data_phy (
   input                   i_data_com_rdy,
 
   output  reg             o_data_crc_good,
+
 
   //FPGA Platform Interface
   output  reg             o_sdio_data_dir,
@@ -112,6 +112,7 @@ wire                      posege_clk;
 
 reg                       buffered_read_stb;
 reg               [7:0]   buffered_read_data;
+reg                       local_rst = 1;
 
 integer                   i;
 //submodules
@@ -162,7 +163,8 @@ reg     top_flag;
 
 //CRC State Machine
 always @ (posedge clk) begin
-  if (rst) begin
+  if (rst | local_rst) begin
+    local_rst                 <=  0;
     crc_rst                   <=  1;
     crc_state                 <=  IDLE;
     enable_crc                <=  0;
@@ -213,6 +215,9 @@ always @ (posedge clk) begin
           crc_state           <=  IDLE;
         end
       end
+      default: begin
+        local_rst             <=  1;
+      end
     endcase
 
     top_flag                  <=  ~top_flag;
@@ -220,7 +225,7 @@ always @ (posedge clk) begin
 end
 
 always @ (posedge clk)begin
-  if (rst) begin
+  if (rst | local_rst) begin
     buffered_read_stb         <=  1'b0;
     buffered_read_data        <=  8'h00;
   end
@@ -231,7 +236,7 @@ always @ (posedge clk)begin
 end
 
 always @ (posedge clk) begin
-  if (rst) begin
+  if (rst | local_rst) begin
     o_sdio_data_out           <=  8'hFF;
   end
   else begin
@@ -241,7 +246,7 @@ end
 
 always @ (posedge clk) begin
   o_data_wr_stb               <=  0;
-  if (rst) begin
+  if (rst | local_rst) begin
     o_data_crc_good           <=  0;
     state                     <=  IDLE;
     o_data_hst_rdy            <=  0;

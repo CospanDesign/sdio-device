@@ -40,7 +40,7 @@ def crc7_gen(number, bit_count):
     final_val = (regval << 1) + 1
     print "Number:\t\t\t\t0x%09X" % number
     print "\tCRC:\t\t\t0x%02X" % value
-    print "\tCRC Shifted Value:\t0x%02X" % final_val
+    #print "\tCRC Shifted Value:\t0x%02X" % final_val
     return (regval & 0x7F)
     
 
@@ -60,6 +60,18 @@ def main(argv):
                         default="0x4000000000",
                         help="Enable Debug Messages")
 
+
+    print "Command 5"
+    value = crc7_gen(0x450100FFFF, 40) 
+    print "Command 5 Response"
+    value = crc7_gen(0x3F91FFFF00, 40)
+
+    print "Get Relative Address"
+    value = crc7_gen(0x4300000000, 40) 
+    print "Get Relative Address Response"
+    value = crc7_gen(0x0300010000, 40)
+
+    #value = crc7_gen(0x4000000000, 40) 
 
     args = parser.parse_args()
     print "input value: %s" % args.crc[0]
