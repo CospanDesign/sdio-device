@@ -56,6 +56,17 @@ module sdio_data_phy (
 
   output  reg             o_data_crc_good,
 
+  output  reg [15:0]      o_crc0_rmt,
+  output  reg [15:0]      o_crc1_rmt,
+  output  reg [15:0]      o_crc2_rmt,
+  output  reg [15:0]      o_crc3_rmt,
+
+  output  reg [15:0]      o_crc0_gen,
+  output  reg [15:0]      o_crc1_gen,
+  output  reg [15:0]      o_crc2_gen,
+  output  reg [15:0]      o_crc3_gen,
+
+
 
   //FPGA Platform Interface
   output  reg             o_sdio_data_dir,
@@ -104,8 +115,7 @@ wire                      sdio_data1;
 wire                      sdio_data2;
 wire                      sdio_data3;
 
-reg                       capture_crc;
-reg                       enable_crc;
+reg                       crc_enable;
 
 reg                       prev_clk_edge;
 wire                      posege_clk;
@@ -116,25 +126,16 @@ reg                       local_rst = 1;
 
 integer                   i;
 //submodules
-genvar g;
+genvar gv;
 generate
-for (g = 0; g < 4; g = g + 1) begin : data_crc
-/*
-crc16 crc (
-  .clk                (clk_x2                       ),
-  .rst                (crc_main_rst                 ),
-  .en                 (crc_main_en                  ),
-  .bit                (crc_data[g]                  ),
-  .crc                (crc_out[g]                   )
-);
-*/
+for (gv = 0; gv < 4; gv = gv + 1) begin : data_crc
 crc16_2bit crc(
   .clk                (clk                          ),
   .rst                (crc_main_rst                 ),
   .en                 (crc_main_en                  ),
-  .bit1               (crc_data[g]                  ),
-  .bit0               (crc_data[g + 4]              ),
-  .crc                (crc_out[g]                   )
+  .bit1               (crc_data[7 - gv]             ),
+  .bit0               (crc_data[7 - gv - 4]         ),
+  .crc                (crc_out[gv]                  )
 );
 
 end
@@ -142,7 +143,7 @@ endgenerate
 
 //asynchronous logic
 assign  crc_main_rst  = i_data_rd_stb ? 1'b0 : crc_rst;
-assign  crc_main_en   = i_data_rd_stb ? 1'b1 : enable_crc;
+assign  crc_main_en   = i_data_rd_stb ? 1'b1 : crc_enable;
 
 assign  crc_out0      = crc_out[0];
 assign  crc_out1      = crc_out[1];
@@ -159,71 +160,8 @@ assign  data_crc_good =  ( (host_crc[0] == crc_out[0]) &&
                            (host_crc[1] == crc_out[1]) &&
                            (host_crc[2] == crc_out[2]) &&
                            (host_crc[3] == crc_out[3]));
-reg     top_flag;
 
-//CRC State Machine
-always @ (posedge clk) begin
-  if (rst | local_rst) begin
-    local_rst                 <=  0;
-    crc_rst                   <=  1;
-    crc_state                 <=  IDLE;
-    enable_crc                <=  0;
-    crc_data                  <=  0;
-    top_flag                  <=  0;
-  end
-  else begin
-    case (crc_state)
-      IDLE: begin
-        crc_rst               <=  1;
-        crc_data              <=  0;
-        if (capture_crc) begin
-          top_flag            <=  1;
-          crc_rst             <=  0;
-          crc_state           <=  PROCESS_CRC;
-          enable_crc          <=  1;
-        end
-      end
-      PROCESS_CRC: begin
-        if (i_write_flag) begin
-          crc_data[0]         <=  i_sdio_data_in[4'h3];
-          crc_data[1]         <=  i_sdio_data_in[4'h2];
-          crc_data[2]         <=  i_sdio_data_in[4'h1];
-          crc_data[3]         <=  i_sdio_data_in[4'h0];
-          crc_data[4]         <=  i_sdio_data_in[4'h7];
-          crc_data[5]         <=  i_sdio_data_in[4'h6];
-          crc_data[6]         <=  i_sdio_data_in[4'h5];
-          crc_data[7]         <=  i_sdio_data_in[4'h4];
-        end
-        else begin
-          //Read Flag
-          crc_data[0]         <=  i_data_rd_data[4'h3];
-          crc_data[1]         <=  i_data_rd_data[4'h3];
-          crc_data[2]         <=  i_data_rd_data[4'h1];
-          crc_data[3]         <=  i_data_rd_data[4'h0];
-          crc_data[4]         <=  i_data_rd_data[4'h7];
-          crc_data[5]         <=  i_data_rd_data[4'h6];
-          crc_data[6]         <=  i_data_rd_data[4'h5];
-          crc_data[7]         <=  i_data_rd_data[4'h4];
-        end
-        if (!capture_crc) begin
-          crc_state           <=  FINISHED;
-          enable_crc          <=  0;
-        end
-      end
-      FINISHED: begin
-        if (state == IDLE) begin
-          crc_state           <=  IDLE;
-        end
-      end
-      default: begin
-        local_rst             <=  1;
-      end
-    endcase
-
-    top_flag                  <=  ~top_flag;
-  end
-end
-
+//Synchronous Logic
 always @ (posedge clk)begin
   if (rst | local_rst) begin
     buffered_read_stb         <=  1'b0;
@@ -247,14 +185,30 @@ end
 always @ (posedge clk) begin
   o_data_wr_stb               <=  0;
   if (rst | local_rst) begin
+    local_rst                 <=  0;
     o_data_crc_good           <=  0;
     state                     <=  IDLE;
     o_data_hst_rdy            <=  0;
     data_count                <=  0;
     o_sdio_data_dir           <=  0;
-    capture_crc               <=  0;
     read_data                 <=  0;
     o_finished                <=  0;
+
+    o_crc0_rmt                <=  0;
+    o_crc1_rmt                <=  0;
+    o_crc2_rmt                <=  0;
+    o_crc3_rmt                <=  0;
+
+    o_crc0_gen                <=  0;
+    o_crc1_gen                <=  0;
+    o_crc2_gen                <=  0;
+    o_crc3_gen                <=  0;
+
+    //CRC Controller
+    crc_rst                   <=  1;
+    crc_data                  <=  0;
+    crc_enable                <=  0;
+
     for (i = 0; i < 4; i = i + 1) begin
       host_crc[i]             <=  0;
     end
@@ -265,6 +219,8 @@ always @ (posedge clk) begin
       IDLE: begin
         o_finished            <=  0;
         data_count            <=  0;
+        crc_rst               <=  1;
+        crc_data              <=  0;
         if (i_interrupt) begin
           o_sdio_data_dir     <=  1;
           read_data           <=  8'hFD;
@@ -275,6 +231,7 @@ always @ (posedge clk) begin
         end
         o_data_hst_rdy        <=  0;
         if (i_activate) begin
+          crc_rst             <=  0;
           o_sdio_data_dir     <=  0;
           o_data_crc_good     <=  0;
           for (i = 0; i < 4; i = i + 1) begin
@@ -289,7 +246,7 @@ always @ (posedge clk) begin
         if (i_write_flag) begin
           o_data_hst_rdy      <= 1;
           if (i_sdio_data_in[0] == 0) begin
-            capture_crc       <= 1;
+            crc_enable        <=  1;
             state             <=  WRITE;
           end
           else begin
@@ -299,6 +256,7 @@ always @ (posedge clk) begin
           if (i_sdio_data_in[2]) begin
             o_data_hst_rdy      <=  1;
             if (i_data_com_rdy) begin
+              crc_enable        <=  1;
               //Both the data bus is ready and the host has not issued the wait signal
               o_sdio_data_dir   <=  1;
               state             <=  READ;
@@ -311,15 +269,13 @@ always @ (posedge clk) begin
       end
       WRITE: begin
         o_data_wr_stb           <=  1;
-        if (data_count == i_data_count - 1) begin
-          //capture_crc           <= 0;
-        end
         if (data_count < i_data_count) begin
           data_count            <= data_count + 1;
+          crc_data              <=  i_sdio_data_in;
         end
         else begin
+          crc_enable            <= 0;
           o_data_wr_stb         <= 0;
-          capture_crc           <= 0;
           state                 <= CRC;
           data_count            <= 0;
           //data_count            <=  data_count + 1;
@@ -352,6 +308,9 @@ always @ (posedge clk) begin
           if (i_data_rd_stb && !buffered_read_stb) begin
             read_data           <=  8'h00;
           end
+          if (i_data_rd_stb) begin
+            crc_data            <=  i_data_rd_data;
+          end
           //Is there a read strobe?
           if (buffered_read_stb) begin
             //It's okay if we start capturing the CRC when data is 0, it will not modify the outcome
@@ -360,18 +319,28 @@ always @ (posedge clk) begin
             read_data           <=  buffered_read_data;
             data_count          <=  data_count + 1;
           end
+          if (data_count == i_data_count - 1) begin
+            crc_enable          <=  0;
+          end
+      
         end
-        if (data_count >= i_data_count) begin
-          capture_crc           <=  0;
+        else begin
+          crc_enable            <=  0;
           state                 <=  WRITE_CRC;
           data_count            <=  0;
-          //if (data_count >= (i_data_count - 1)) begin
-          read_data             <=  {host_crc0[15], host_crc1[15], host_crc2[15], host_crc3[15],
-                                     host_crc0[14], host_crc1[14], host_crc2[14], host_crc3[14]};
-          host_crc[0]           <=  {host_crc[0][13:0], 2'b00};
-          host_crc[1]           <=  {host_crc[1][13:0], 2'b00};
-          host_crc[2]           <=  {host_crc[2][13:0], 2'b00};
-          host_crc[3]           <=  {host_crc[3][13:0], 2'b00};
+          read_data             <=  {crc_out0[15], crc_out1[15], crc_out2[15], crc_out3[15],
+                                     crc_out0[14], crc_out1[14], crc_out2[14], crc_out3[14]};
+
+          host_crc[0]           <=  {crc_out[0][13:0], 2'b00};
+          host_crc[1]           <=  {crc_out[1][13:0], 2'b00};
+          host_crc[2]           <=  {crc_out[2][13:0], 2'b00};
+          host_crc[3]           <=  {crc_out[3][13:0], 2'b00};
+
+          o_crc0_gen            <=  crc_out[0];
+          o_crc1_gen            <=  crc_out[1];
+          o_crc2_gen            <=  crc_out[2];
+          o_crc3_gen            <=  crc_out[3];
+
         end
       end
       CRC: begin
@@ -383,6 +352,16 @@ always @ (posedge clk) begin
           host_crc[3]           <=  {host_crc[3][13:0], i_sdio_data_in[4], i_sdio_data_in[0]};
         end
         else begin
+          o_crc0_rmt            <=  host_crc[0];
+          o_crc1_rmt            <=  host_crc[1];
+          o_crc2_rmt            <=  host_crc[2];
+          o_crc3_rmt            <=  host_crc[3];
+
+          o_crc0_gen            <=  crc_out[0];
+          o_crc1_gen            <=  crc_out[1];
+          o_crc2_gen            <=  crc_out[2];
+          o_crc3_gen            <=  crc_out[3];
+
           state                 <=  FINISHED;
         end
       end
@@ -412,6 +391,7 @@ always @ (posedge clk) begin
         end
       end
       default: begin
+        local_rst               <=  1;
         if (!i_activate) begin
           state                 <=  IDLE;
         end
@@ -419,6 +399,4 @@ always @ (posedge clk) begin
     endcase
   end
 end
-
-
 endmodule

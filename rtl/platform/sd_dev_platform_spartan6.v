@@ -62,6 +62,7 @@
  */
 
 `define SWAP_CLK  0
+`define SDIO_DATA_DELAY_FIXED
 module sd_dev_platform_spartan6 #(
   parameter                 OUTPUT_DELAY  = 63,
   parameter                 INPUT_DELAY   = 63
@@ -179,8 +180,8 @@ IODELAY2 #(
   .CAL                  (1'b0                 ),
   .BUSY                 (                     ),
 
-  .IOCLK0               (clk                  ),  //XXX: This one is not SERDESized.. Do I need to add a clock??
-  .IOCLK1               (1'b0                 ),
+  .IOCLK0               (o_sd_clk             ),  //XXX: This one is not SERDESized.. Do I need to add a clock??
+  //.IOCLK1               (!o_sd_clk            ),
 
   .CLK                  (clk                  ),
   .INC                  (i_cfg_inc            ),
@@ -189,6 +190,11 @@ IODELAY2 #(
 );
 
 //DATA Lines
+wire      [3:0]           pin_data_dir;
+wire      [3:0]           pin_data_dir_predelay;
+
+assign  pin_data_dir   = {i_sd_data_dir, i_sd_data_dir, i_sd_data_dir, i_sd_data_dir};
+
 genvar pcnt;
 generate
 for (pcnt = 0; pcnt < 4; pcnt = pcnt + 1) begin: sgen
@@ -203,11 +209,18 @@ IOBUF #(
   .IO                   (io_phy_sd_data[pcnt]   )
 );
 
+
 IODELAY2 #(
-  .DATA_RATE            ("SDR"                            ),
+  .DATA_RATE            ("DDR"                            ),
+  //.DATA_RATE            ("SDR"                            ),
+`ifdef SDIO_DATA_DELAY_FIXED
+  .IDELAY_TYPE          ("FIXED"                          ),
   .IDELAY_VALUE         (INPUT_DELAY                      ),
   .ODELAY_VALUE         (OUTPUT_DELAY                     ),
-  .IDELAY_TYPE          ("FIXED"                          ),
+`else
+  .IDELAY_TYPE          ("VARIABLE_FROM_ZERO" ),
+  .ODELAY_VALUE         (0                                ),
+`endif
   .COUNTER_WRAPAROUND   ("STAY_AT_LIMIT"                  ),
   .DELAY_SRC            ("IO"                             ),
   .SERDES_MODE          ("NONE"                           ),
@@ -215,32 +228,61 @@ IODELAY2 #(
 )sd_data_delay(
   //IOSerdes
   //.T                    (pin_data_tristate_predelay[pcnt] ),
-  .T                    (!i_sd_data_dir                   ),
+  .T                    (pin_data_dir_predelay[pcnt]       ),
   .ODATAIN              (pin_data_in_predelay[pcnt]       ),
   .DATAOUT              (pin_data_out_delay[pcnt]         ),
+  //.DATAOUT2             (pin_data_out_delay[pcnt]         ),
 
   //To/From IO Buffer
   .TOUT                 (pin_data_tristate[pcnt]          ),
   .IDATAIN              (pin_data_in[pcnt]                ),
   .DOUT                 (pin_data_out[pcnt]               ),
 
-  .DATAOUT2             (                                 ),
-  .IOCLK0               (1'b0                             ),  //This one is not SERDESized.. Do I need to add a clock??
-  .IOCLK1               (1'b0                             ),
-  .CLK                  (1'b0                             ),
+  .IOCLK0               (o_sd_clk                         ),  //This one is not SERDESized.. Do I need to add a clock??
+  .IOCLK1               (!o_sd_clk                        ),
+
   .CAL                  (1'b0                             ),
+  .BUSY                 (                                 ),
+
+`ifdef SDIO_DATA_DELAY_FIXED
+  .CLK                  (1'b0                             ),
   .INC                  (1'b0                             ),
   .CE                   (1'b0                             ),
-  .BUSY                 (                                 ),
   .RST                  (1'b0                             )
-  //.RST                  (rst                              )
+`else
+  .CLK                  (clk                              ),
+  .INC                  (i_cfg_inc                        ),
+  .CE                   (i_cfg_en                         ),
+  .RST                  (rst                              )
+`endif
 );
 
+
+ODDR2 #(
+  .DDR_ALIGNMENT        ("C0"                             ),
+  .SRTYPE               ("ASYNC"                          ),
+  .INIT                 (1                                )
+) data_out_dir (
+  .C0                   (o_sd_clk                         ),
+  .C1                   (!o_sd_clk                        ),
+  .CE                   (1'b1                             ),
+  .S                    (1'b0                             ),
+  .R                    (1'b0                             ),
+
+  .D0                   (!pin_data_dir[pcnt]              ),
+  .D1                   (!pin_data_dir[pcnt]              ),
+  .Q                    (pin_data_dir_predelay[pcnt]      )
+
+);
+
+
 IDDR2 #(
-  .DDR_ALIGNMENT        ("NONE"                           ),
-  .INIT_Q0              (0                                ),
-  .INIT_Q1              (0                                ),
-  .SRTYPE               ("SYNC"                           )
+  //.DDR_ALIGNMENT        ("NONE"                           ),
+  //.SRTYPE               ("SYNC"                           ),
+  .DDR_ALIGNMENT        ("C0"                             ),
+  .SRTYPE               ("ASYNC"                          ),
+  .INIT_Q0              (1                                ),
+  .INIT_Q1              (1                                )
 ) data_in_ddr (
   .C0                   (o_sd_clk                         ),
   //.C1                   (neg_sd_clk                     ),
@@ -256,18 +298,24 @@ IDDR2 #(
 
 ODDR2 #(
   .DDR_ALIGNMENT        ("C0"                             ),
-  .INIT                 (0                                ),
-  .SRTYPE               ("ASYNC"                           )
+  .SRTYPE               ("ASYNC"                          ),
+
+  //.DDR_ALIGNMENT        ("NONE"                           ),
+  //.SRTYPE               ("SYNC"                           ),
+
+  .INIT                 (1                                )
 ) data_out_ddr (
   .C0                   (o_sd_clk                         ),
   .C1                   (!o_sd_clk                        ),
-  //.C1                   (neg_sd_clk                       ),
   .CE                   (1'b1                             ),
   .S                    (1'b0                             ),
   .R                    (1'b0                             ),
 
   .D0                   (sd_data_out[pcnt + 4]            ),
   .D1                   (sd_data_out[pcnt]                ),
+  //.D0                   (1'b0                             ),
+  //.D1                   (1'b1                             ),
+
   .Q                    (pin_data_in_predelay[pcnt]       )
 
 );
@@ -287,7 +335,8 @@ always @ (posedge clk) begin
     user_reset            <=  1;
   end
   else begin
-    if (count < 4) begin
+    //if (count < 4) begin
+    if (count < 8) begin
       count               <=  count + 1;
     end
     else begin

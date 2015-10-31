@@ -178,12 +178,25 @@ module sdio_device_stack (
   output          [3:0]     o_sd_phy_state,
   output          [3:0]     o_sd_control_state,
 
+  output          [7:0]     o_gen_crc,
+  output          [7:0]     o_rmt_crc,
+
+
+
+  output      [15:0]        o_crc0_data_rmt,
+  output      [15:0]        o_crc1_data_rmt,
+  output      [15:0]        o_crc2_data_rmt,
+  output      [15:0]        o_crc3_data_rmt,
+
+  output      [15:0]        o_crc0_data_gen,
+  output      [15:0]        o_crc1_data_gen,
+  output      [15:0]        o_crc2_data_gen,
+  output      [15:0]        o_crc3_data_gen,
+
   //FPGA Interface
   output                    o_sd_cmd_dir,
   input                     i_sd_cmd_in,
   output                    o_sd_cmd_out,
-  output          [7:0]     o_gen_crc,
-  output          [7:0]     o_rmt_crc,
 
   output                    o_sd_data_dir,
   output          [7:0]     o_sd_data_out,
@@ -595,6 +608,16 @@ sdio_device_phy phy(
   .o_state                  (o_sd_phy_state             ),
   .o_gen_crc                (o_gen_crc                  ),
   .o_rmt_crc                (o_rmt_crc                  ),
+
+  .o_crc0_data_rmt          (o_crc0_data_rmt            ),
+  .o_crc1_data_rmt          (o_crc1_data_rmt            ),
+  .o_crc2_data_rmt          (o_crc2_data_rmt            ),
+  .o_crc3_data_rmt          (o_crc3_data_rmt            ),
+ 
+  .o_crc0_data_gen          (o_crc0_data_gen            ),
+  .o_crc1_data_gen          (o_crc1_data_gen            ),
+  .o_crc2_data_gen          (o_crc2_data_gen            ),
+  .o_crc3_data_gen          (o_crc3_data_gen            ),
 
   .o_sdio_data_dir          (o_sd_data_dir              ),
   .i_sdio_data_in           (i_sd_data_in               ),

@@ -49,6 +49,17 @@ module sdio_device_phy (
   output  reg [7:0]   o_gen_crc,
   output  reg [7:0]   o_rmt_crc,
 
+  output      [15:0]  o_crc0_data_rmt,
+  output      [15:0]  o_crc1_data_rmt,
+  output      [15:0]  o_crc2_data_rmt,
+  output      [15:0]  o_crc3_data_rmt,
+
+  output      [15:0]  o_crc0_data_gen,
+  output      [15:0]  o_crc1_data_gen,
+  output      [15:0]  o_crc2_data_gen,
+  output      [15:0]  o_crc3_data_gen,
+
+
 
   output              o_sdio_data_dir,
   input   [7:0]       i_sdio_data_in,
@@ -108,6 +119,17 @@ sdio_data_phy data_phy(
   .i_data_rd_data     (i_data_rd_data  ),
   .o_data_hst_rdy     (o_data_hst_rdy  ),
   .i_data_com_rdy     (i_data_com_rdy  ),
+
+  .o_crc0_rmt         (o_crc0_data_rmt ),
+  .o_crc1_rmt         (o_crc1_data_rmt ),
+  .o_crc2_rmt         (o_crc2_data_rmt ),
+  .o_crc3_rmt         (o_crc3_data_rmt ),
+                      
+  .o_crc0_gen         (o_crc0_data_gen ),
+  .o_crc1_gen         (o_crc1_data_gen ),
+  .o_crc2_gen         (o_crc2_data_gen ),
+  .o_crc3_gen         (o_crc3_data_gen ),
+
 
   .o_sdio_data_dir    (o_sdio_data_dir ),
   .i_sdio_data_in     (i_sdio_data_in  ),

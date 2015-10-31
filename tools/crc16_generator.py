@@ -74,14 +74,25 @@ def main(argv):
     data = Array('H')
     for i in range (256):
         data.append(0xFFFF)
+
     value = crc16_gen(data) 
 
     data = Array('H')
-    #data.append(0x3333)
-
-    #data.append(0x8000)
-    #data.append(0x5000)
+    data.append(0x00FF)
     value = crc16_gen(data) 
+
+    data = Array('H')
+    data.append(0x0F0F)
+    value = crc16_gen(data) 
+
+    data = Array('H')
+    data.append(0x3333)
+    value = crc16_gen(data) 
+
+    data = Array('H')
+    data.append(0x8001)
+    value = crc16_gen(data) 
+
 
 
 
