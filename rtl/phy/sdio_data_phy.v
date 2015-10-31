@@ -48,7 +48,8 @@ module sdio_data_phy (
   input           [12:0]  i_data_count,
 
   output  reg             o_data_wr_stb,
-  output          [7:0]   o_data_wr_data,
+  //output       [7:0]      o_data_wr_data,
+  output  reg     [7:0]   o_data_wr_data,
   input                   i_data_rd_stb,
   input           [7:0]   i_data_rd_data,
   output  reg             o_data_hst_rdy, //Host May not be ready
@@ -155,7 +156,7 @@ assign  host_crc1     = host_crc[1];
 assign  host_crc2     = host_crc[2];
 assign  host_crc3     = host_crc[3];
 
-assign  o_data_wr_data= o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
+//assign  o_data_wr_data= o_sdio_data_dir ? 8'h00 : i_sdio_data_in;
 assign  data_crc_good =  ( (host_crc[0] == crc_out[0]) &&
                            (host_crc[1] == crc_out[1]) &&
                            (host_crc[2] == crc_out[2]) &&
@@ -208,6 +209,7 @@ always @ (posedge clk) begin
     crc_rst                   <=  1;
     crc_data                  <=  0;
     crc_enable                <=  0;
+    o_data_wr_data            <=  0;
 
     for (i = 0; i < 4; i = i + 1) begin
       host_crc[i]             <=  0;
@@ -397,6 +399,7 @@ always @ (posedge clk) begin
         end
       end
     endcase
+    o_data_wr_data          <=  i_sdio_data_in;
   end
 end
 endmodule
